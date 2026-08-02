@@ -412,12 +412,25 @@ export default function PermintaanPage() {
                   {formData.items?.map((item, index) => (
                     <div key={index} className="flex flex-col md:flex-row gap-3 items-start bg-white p-3 rounded-lg border border-blue-100 shadow-sm relative">
                       <div className="flex-1 w-full">
-                        <label className="text-xs text-gray-500 mb-1 block font-medium">Cari Nama Barang *</label>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="text-xs text-gray-500 block font-medium">Cari Nama Barang *</label>
+                          {item.name && (() => {
+                            const found = barangList.find(b => b.nama.toLowerCase() === item.name.toLowerCase())
+                            if (!found) {
+                              return <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">📦 Non-Stok Master</span>
+                            }
+                            const sisaStok = (found.stokAwal || 0) + (found.barangMasuk || 0) - (found.barangKeluar || 0)
+                            if (sisaStok <= 0) {
+                              return <span className="text-[10px] bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded">⚠️ Stok Kosong (0)</span>
+                            }
+                            return <span className="text-[10px] bg-green-100 text-green-800 font-bold px-1.5 py-0.5 rounded">✅ Sisa Stok: {sisaStok}</span>
+                          })()}
+                        </div>
                         <input 
                           type="text" 
                           list="barang-list"
                           required
-                          placeholder="Ketik untuk mencari..."
+                          placeholder="Ketik nama barang (Master atau Baru)..."
                           value={item.name}
                           onChange={(e) => handleFormItemChange(index, 'name', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary text-sm transition-shadow shadow-inner"
@@ -573,7 +586,22 @@ export default function PermintaanPage() {
                       {selectedRequest.items && selectedRequest.items.length > 0 ? (
                         selectedRequest.items.map((item: any, idx) => (
                           <tr key={idx} className="hover:bg-gray-50/50">
-                            <td className="px-5 py-3 text-foreground font-medium">{item.name}</td>
+                            <td className="px-5 py-3 text-foreground font-medium">
+                              <div>
+                                <p className="font-semibold text-gray-900">{item.name}</p>
+                                {(() => {
+                                  const found = barangList.find(b => b.nama.toLowerCase() === item.name.toLowerCase() || b._id === item.barangId)
+                                  if (!found) {
+                                    return <span className="inline-block mt-0.5 text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">📦 Non-Stok Master</span>
+                                  }
+                                  const sisaStok = (found.stokAwal || 0) + (found.barangMasuk || 0) - (found.barangKeluar || 0)
+                                  if (sisaStok <= 0) {
+                                    return <span className="inline-block mt-0.5 text-[10px] bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded">⚠️ Stok Kosong</span>
+                                  }
+                                  return null
+                                })()}
+                              </div>
+                            </td>
                             <td className="px-5 py-3 text-gray-600">{item.spesifikasi || '-'}</td>
                             <td className="px-5 py-3 text-center text-gray-600">{item.size || '-'}</td>
                             <td className="px-5 py-3 text-foreground text-center font-bold bg-gray-50/50">{item.qty}</td>
