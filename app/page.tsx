@@ -7,8 +7,8 @@ export default function Home() {
   const router = useRouter()
 
   useEffect(() => {
-    // Redirect to dashboard (in production, check authentication first)
-    router.push('/dashboard')
+    // Selalu redirect ke halaman login
+    router.push('/login')
   }, [router])
 
   return (
