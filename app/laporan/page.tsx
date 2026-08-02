@@ -2,7 +2,7 @@
 
 import { MainLayout } from '@/components/layout/main-layout'
 import { SummaryCard } from '@/components/dashboard/summary-card'
-import { FileText, Download, Users, PackageCheck, TrendingUp, Calendar } from 'lucide-react'
+import { FileText, Download, Users, PackageCheck, TrendingUp, Calendar, Building2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
@@ -23,6 +23,7 @@ interface Barang {
   _id: string
   kode: string
   nama: string
+  cabang: string
   kategori: string
   stokAwal: number
   barangMasuk: number
@@ -50,7 +51,7 @@ export default function LaporanPage() {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [selectedMonth, selectedYear])
 
   const fetchData = async () => {
     try {
@@ -58,7 +59,7 @@ export default function LaporanPage() {
       const [resPermintaan, resBarang, resMutasi] = await Promise.all([
         fetch('/api/permintaan'),
         fetch('/api/barang'),
-        fetch('/api/mutasi')
+        fetch(`/api/mutasi?bulan=${selectedMonth}&tahun=${selectedYear}`)
       ])
       
       if (resPermintaan.ok) setPermintaanData(await resPermintaan.json())
@@ -73,7 +74,6 @@ export default function LaporanPage() {
 
   // --- FILTERING LOGIC ---
   const filteredPermintaan = permintaanData.filter(req => {
-    // req.tanggal format is YYYY-MM-DD
     const reqYear = req.tanggal.substring(0, 4)
     const reqMonth = req.tanggal.substring(5, 7)
     return reqYear === selectedYear && reqMonth === selectedMonth
@@ -139,13 +139,13 @@ export default function LaporanPage() {
     return {
       kode: b.kode,
       nama: b.nama,
+      cabang: b.cabang || 'Jakarta (Pusat)',
       kategori: b.kategori,
       masukBulanIni,
       keluarBulanIni,
       sisaStok: sisaStokAkhir
     }
   })
-  // Optionally filter out items that have 0 remaining stock and 0 mutations this month to declutter
   .filter(b => b.sisaStok > 0 || b.masukBulanIni > 0 || b.keluarBulanIni > 0);
 
   // --- EXPORT FUNCTIONS ---
@@ -153,7 +153,6 @@ export default function LaporanPage() {
     const date = new Date(2000, parseInt(monthStr) - 1, 1)
     return date.toLocaleString('id-ID', { month: 'long' })
   }
-  const reportTitle = `Laporan Penjualan & Inventori - ${getMonthName(selectedMonth)} ${selectedYear}`
 
   const exportExcel = () => {
     const wb = XLSX.utils.book_new()
@@ -174,15 +173,16 @@ export default function LaporanPage() {
       'No': index + 1,
       'Kode SKU': b.kode,
       'Nama Barang': b.nama,
+      'Cabang / Kota': b.cabang,
       'Kategori': b.kategori,
-      'Stok Masuk Bulan Ini': b.masukBulanIni,
-      'Terjual Bulan Ini': b.keluarBulanIni,
-      'Sisa Stok Akhir Bulan': b.sisaStok
+      'Stok Masuk Periode Ini': b.masukBulanIni,
+      'Terjual Periode Ini': b.keluarBulanIni,
+      'Sisa Stok Akhir Periode': b.sisaStok
     }))
     const wsBarang = XLSX.utils.json_to_sheet(wsBarangData)
-    XLSX.utils.book_append_sheet(wb, wsBarang, "Laporan Stok")
+    XLSX.utils.book_append_sheet(wb, wsBarang, "Laporan Stok Multi-Cabang")
 
-    XLSX.writeFile(wb, `Laporan_SaleStock_${selectedMonth}_${selectedYear}.xlsx`)
+    XLSX.writeFile(wb, `Laporan_FPT_Tracker_${selectedMonth}_${selectedYear}.xlsx`)
   }
 
   const exportPDF = () => {
@@ -190,7 +190,7 @@ export default function LaporanPage() {
     
     // Header
     doc.setFontSize(18)
-    doc.text('Laporan Bulanan SaleStock', 14, 22)
+    doc.text('Laporan Bulanan FPT Tracker', 14, 22)
     doc.setFontSize(12)
     doc.text(`Periode: ${getMonthName(selectedMonth)} ${selectedYear}`, 14, 30)
     
@@ -209,7 +209,6 @@ export default function LaporanPage() {
     // Tabel 2: Rekap Barang
     let finalY = (doc as any).lastAutoTable.finalY || 46
     
-    // Check if we need a new page for the next table
     if (finalY > 150) {
       doc.addPage()
       finalY = 20
@@ -218,15 +217,16 @@ export default function LaporanPage() {
     }
 
     doc.setFontSize(14)
-    doc.text('2. Status & Mutasi Barang', 14, finalY)
+    doc.text('2. Status & Mutasi Barang Multi-Cabang', 14, finalY)
 
     autoTable(doc, {
       startY: finalY + 4,
-      head: [['No', 'Kode', 'Nama Barang', 'Kategori', 'Stok Masuk Bulan Ini', 'Terjual Bulan Ini', 'Sisa Stok Akhir']],
+      head: [['No', 'Kode', 'Nama Barang', 'Cabang', 'Kategori', 'Stok Masuk', 'Terjual', 'Sisa Stok Akhir']],
       body: barangReport.map((b, i) => [
         i + 1, 
         b.kode, 
         b.nama, 
+        b.cabang,
         b.kategori, 
         b.masukBulanIni, 
         b.keluarBulanIni, 
@@ -236,7 +236,7 @@ export default function LaporanPage() {
       headStyles: { fillColor: [16, 185, 129] }
     })
 
-    doc.save(`Laporan_SaleStock_${selectedMonth}_${selectedYear}.pdf`)
+    doc.save(`Laporan_FPT_Tracker_${selectedMonth}_${selectedYear}.pdf`)
   }
 
   const months = [
@@ -248,7 +248,7 @@ export default function LaporanPage() {
     { value: '11', label: 'November' }, { value: '12', label: 'Desember' }
   ]
 
-  const years = ['2024', '2025', '2026', '2027']
+  const years = ['2024', '2025', '2026', '2027', '2028', '2029', '2030']
 
   return (
     <MainLayout>
@@ -256,7 +256,7 @@ export default function LaporanPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-title mb-2">Laporan & Ekspor Data</h1>
-          <p className="text-muted-foreground">Analisis performa penjualan dan mutasi stok secara lengkap</p>
+          <p className="text-muted-foreground">Analisis performa penjualan dan mutasi stok multi-cabang secara lengkap</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-border">
@@ -267,14 +267,14 @@ export default function LaporanPage() {
           <select 
             value={selectedMonth} 
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-3 py-2 text-sm bg-gray-50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            className="px-3 py-2 text-sm bg-gray-50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold text-gray-700"
           >
             {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
           <select 
             value={selectedYear} 
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="px-3 py-2 text-sm bg-gray-50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            className="px-3 py-2 text-sm bg-gray-50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold text-gray-700"
           >
             {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
@@ -320,7 +320,7 @@ export default function LaporanPage() {
       {/* Export Action Bar */}
       <div className="dashboard-card mb-8 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-foreground">Download Laporan</h3>
+          <h3 className="text-lg font-bold text-foreground">Download Laporan ({getMonthName(selectedMonth)} {selectedYear})</h3>
           <p className="text-sm text-muted-foreground">Unduh rekapitulasi data dalam format pilihan Anda</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
@@ -385,27 +385,33 @@ export default function LaporanPage() {
           {/* Table 2: Rekap Barang */}
           <div className="dashboard-card overflow-hidden">
             <div className="p-6 border-b border-border bg-gray-50/50">
-              <h3 className="text-subtitle">2. Status & Mutasi Barang Terkini</h3>
+              <h3 className="text-subtitle">2. Status & Mutasi Barang Multi-Cabang ({getMonthName(selectedMonth)} {selectedYear})</h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-gray-50">
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 w-16">No</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Kode</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Nama Barang</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600">Kategori</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600 text-green-700 bg-green-50/50">Stok Masuk Bulan Ini</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600 text-red-700 bg-red-50/50">Terjual Bulan Ini</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600 bg-blue-50/50">Sisa Stok Akhir Bulan</th>
+                    <th className="px-6 py-4 text-left font-semibold text-gray-600 w-16">No</th>
+                    <th className="px-6 py-4 text-left font-semibold text-gray-600">Kode</th>
+                    <th className="px-6 py-4 text-left font-semibold text-gray-600">Nama Barang</th>
+                    <th className="px-6 py-4 text-left font-semibold text-gray-600">Cabang</th>
+                    <th className="px-6 py-4 text-center font-semibold text-gray-600">Kategori</th>
+                    <th className="px-6 py-4 text-center font-semibold text-gray-600 text-green-700 bg-green-50/50">Stok Masuk Bulan Ini</th>
+                    <th className="px-6 py-4 text-center font-semibold text-gray-600 text-red-700 bg-red-50/50">Terjual Bulan Ini</th>
+                    <th className="px-6 py-4 text-center font-semibold text-gray-600 bg-blue-50/50">Sisa Stok Akhir Bulan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-border bg-white">
                   {barangReport.length > 0 ? barangReport.map((b, idx) => (
-                    <tr key={b.kode} className="hover:bg-gray-50/50">
+                    <tr key={idx} className="hover:bg-gray-50/50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-500">{idx + 1}</td>
                       <td className="px-6 py-4 text-sm font-medium text-primary whitespace-nowrap">{b.kode}</td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{b.nama}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                          📍 {b.cabang}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-700 text-center">{b.kategori}</td>
                       <td className="px-6 py-4 text-sm font-bold text-green-600 text-center bg-green-50/10">+{b.masukBulanIni}</td>
                       <td className="px-6 py-4 text-sm font-bold text-red-600 text-center bg-red-50/10">-{b.keluarBulanIni}</td>
@@ -413,8 +419,8 @@ export default function LaporanPage() {
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                        Tidak ada data barang.
+                      <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                        Tidak ada data barang pada periode ini.
                       </td>
                     </tr>
                   )}

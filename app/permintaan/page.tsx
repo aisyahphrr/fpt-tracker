@@ -40,10 +40,25 @@ export default function PermintaanPage() {
   })
   const [statusUpdate, setStatusUpdate] = useState<PermintaanItem['status']>('pending')
 
+  const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff')
+
   useEffect(() => {
+    fetchProfile()
     fetchData()
     fetchBarang()
   }, [])
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch('/api/user/profile')
+      if (res.ok) {
+        const data = await res.json()
+        if (data?.role) setUserRole(data.role)
+      }
+    } catch (e) {
+      console.error('Error fetching profile:', e)
+    }
+  }
 
   const fetchData = async () => {
     try {
@@ -197,11 +212,21 @@ export default function PermintaanPage() {
     try {
       const url = isEditModalOpen && selectedRequest ? `/api/permintaan/${selectedRequest._id}` : '/api/permintaan'
       const method = isEditModalOpen ? 'PUT' : 'POST'
+
+      const sanitizedItems = formData.items?.map(item => ({
+        ...item,
+        barangId: (item.barangId && item.barangId !== '') ? item.barangId : undefined
+      }))
+
+      const payload = {
+        ...formData,
+        items: sanitizedItems
+      }
       
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
 
       const data = await res.json()
@@ -264,12 +289,14 @@ export default function PermintaanPage() {
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3">
-            <button className="btn-primary btn-sm" onClick={openAddModal}>
-              <Plus className="w-4 h-4" />
-              Tambah Permintaan
-            </button>
-          </div>
+          {userRole === 'admin' && (
+            <div className="flex gap-3">
+              <button className="btn-primary btn-sm" onClick={openAddModal}>
+                <Plus className="w-4 h-4" />
+                Tambah Permintaan
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
@@ -310,6 +337,7 @@ export default function PermintaanPage() {
       ) : (
         <RequestTable
           data={filteredRequests}
+          userRole={userRole}
           onDetail={handleDetail}
           onEdit={handleEdit}
           onDelete={handleDelete}
@@ -636,24 +664,28 @@ export default function PermintaanPage() {
 
               {/* Actions */}
               <div className="flex gap-3 pt-6 border-t border-border justify-end">
-                <button 
-                  onClick={() => {
-                    setIsDetailModalOpen(false)
-                    handleUpdateStatus(selectedRequest.id)
-                  }} 
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                  Update Status
-                </button>
-                <button 
-                  onClick={() => {
-                    setIsDetailModalOpen(false)
-                    handleEdit(selectedRequest.id)
-                  }} 
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Edit Data
-                </button>
+                {userRole === 'admin' && (
+                  <>
+                    <button 
+                      onClick={() => {
+                        setIsDetailModalOpen(false)
+                        handleUpdateStatus(selectedRequest.id)
+                      }} 
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                    >
+                      Update Status
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setIsDetailModalOpen(false)
+                        handleEdit(selectedRequest.id)
+                      }} 
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Edit Data
+                    </button>
+                  </>
+                )}
                 <button onClick={() => setIsDetailModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                   Tutup
                 </button>

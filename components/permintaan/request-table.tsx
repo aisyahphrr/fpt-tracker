@@ -53,13 +53,14 @@ function getStatusLabel(status: string) {
 
 interface RequestTableProps {
   data: RequestItem[]
+  userRole?: 'admin' | 'staff'
   onDetail?: (id: string) => void
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
   onUpdateStatus?: (id: string) => void
 }
 
-export function RequestTable({ data, onDetail, onEdit, onDelete, onUpdateStatus }: RequestTableProps) {
+export function RequestTable({ data, userRole = 'admin', onDetail, onEdit, onDelete, onUpdateStatus }: RequestTableProps) {
   const [expandedRows, setExpandedRows] = useState<string[]>([])
 
   const toggleActionMenu = (id: string) => {
@@ -128,39 +129,44 @@ export function RequestTable({ data, onDetail, onEdit, onDelete, onUpdateStatus 
                           }}
                           className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-gray-50 transition-colors"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-4 h-4 text-blue-600" />
                           Detail
                         </button>
-                        <button
-                          onClick={() => {
-                            onEdit?.(request.id)
-                            toggleActionMenu(request.id)
-                          }}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-gray-50 transition-colors border-t border-border"
-                        >
-                          <Edit className="w-4 h-4" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => {
-                            onUpdateStatus?.(request.id)
-                            toggleActionMenu(request.id)
-                          }}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-gray-50 transition-colors border-t border-border"
-                        >
-                          <Download className="w-4 h-4" />
-                          Update Status
-                        </button>
-                        <button
-                          onClick={() => {
-                            onDelete?.(request.id)
-                            toggleActionMenu(request.id)
-                          }}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-border"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                        </button>
+                        
+                        {userRole === 'admin' && (
+                          <>
+                            <button
+                              onClick={() => {
+                                onEdit?.(request.id)
+                                toggleActionMenu(request.id)
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-gray-50 transition-colors border-t border-border"
+                            >
+                              <Edit className="w-4 h-4 text-yellow-600" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                onUpdateStatus?.(request.id)
+                                toggleActionMenu(request.id)
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-gray-50 transition-colors border-t border-border"
+                            >
+                              <Download className="w-4 h-4 text-purple-600" />
+                              Update Status
+                            </button>
+                            <button
+                              onClick={() => {
+                                onDelete?.(request.id)
+                                toggleActionMenu(request.id)
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-border"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

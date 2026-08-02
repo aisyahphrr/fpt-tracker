@@ -1,6 +1,23 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Permintaan from '@/lib/models/Permintaan';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fpt_tracker_secret_jwt_key_2026';
+
+async function isAdminUser() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth_token')?.value;
+    if (!token) return false;
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    return payload?.email === 'nailah@gmail.com' || payload?.role === 'admin';
+  } catch (e) {
+    return false;
+  }
+}
 
 // GET all permintaan
 export async function GET() {
@@ -14,9 +31,17 @@ export async function GET() {
   }
 }
 
-// POST new permintaan
+// POST new permintaan (Admin Only)
 export async function POST(req: Request) {
   try {
+    const isAdmin = await isAdminUser();
+    if (!isAdmin) {
+      return NextResponse.json(
+        { message: 'Akses ditolak. Hanya Admin Sales (Nailah) yang memiliki izin untuk membuat permintaan buyer baru.' },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { tanggal, buyer, negara, tujuan, items, catatan } = body;
 
@@ -32,9 +57,14 @@ export async function POST(req: Request) {
     const count = await Permintaan.countDocuments();
     const noRequest = `REQ-${year}-${(count + 1).toString().padStart(3, '0')}`;
 
-    // Hitung total item & qty
-    const jumlahItem = items.length;
-    const totalQty = items.reduce((acc: number, item: any) => acc + (Number(item.qty) || 0), 0);
+    // Hitung total item & qty, dan bersihkan barangId jika kosong
+    const sanitizedItems = items.map((item: any) => ({
+      ...item,
+      barangId: (item.barangId && item.barangId !== '') ? item.barangId : undefined
+    }));
+
+    const jumlahItem = sanitizedItems.length;
+    const totalQty = sanitizedItems.reduce((acc: number, item: any) => acc + (Number(item.qty) || 0), 0);
 
     const newPermintaan = await Permintaan.create({
       noRequest,
@@ -44,9 +74,9 @@ export async function POST(req: Request) {
       tujuan: tujuan || '',
       jumlahItem,
       totalQty,
-      items,
+      items: sanitizedItems,
       catatan: catatan || '',
-      status: 'pending' // Default status
+      status: 'pending'
     });
 
     return NextResponse.json({ message: 'Permintaan berhasil dibuat', data: newPermintaan }, { status: 201 });

@@ -8,11 +8,8 @@ import {
   Package,
   BarChart3,
   FileText,
-  Download,
-  Settings,
   User,
   LogOut,
-  ChevronDown,
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -24,7 +21,7 @@ interface SidebarProps {
 export function Sidebar({ userRole = 'admin', userName = 'Admin User', userEmail = 'admin@example.com' }: SidebarProps) {
   const pathname = usePathname()
 
-  const adminMenuItems = [
+  const allMenuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/permintaan', label: 'Permintaan Buyer', icon: ShoppingCart },
     { href: '/barang', label: 'Barang', icon: Package },
@@ -32,14 +29,7 @@ export function Sidebar({ userRole = 'admin', userName = 'Admin User', userEmail
     { href: '/laporan', label: 'Laporan', icon: FileText },
   ]
 
-  const staffMenuItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/permintaan', label: 'Permintaan Buyer', icon: ShoppingCart },
-    { href: '/barang', label: 'Barang', icon: Package },
-    { href: '/stok', label: 'Stok Barang', icon: BarChart3 },
-  ]
-
-  const menuItems = userRole === 'admin' ? adminMenuItems : staffMenuItems
+  const menuItems = allMenuItems
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
@@ -108,11 +98,11 @@ export function Sidebar({ userRole = 'admin', userName = 'Admin User', userEmail
       <div className="border-t border-border p-4 space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-            {userName.charAt(0)}
+            {userName ? userName.charAt(0).toUpperCase() : 'U'}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">{userName}</p>
-            <p className="text-xs text-muted-foreground truncate capitalize">{userRole}</p>
+            <p className="text-xs text-muted-foreground truncate capitalize">{userRole === 'admin' ? 'Admin Sales' : 'Staff Sales'}</p>
           </div>
         </div>
 

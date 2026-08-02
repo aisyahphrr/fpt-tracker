@@ -5,11 +5,14 @@ const BarangSchema = new mongoose.Schema(
     kode: {
       type: String,
       required: [true, 'Kode barang wajib diisi'],
-      unique: true,
     },
     nama: {
       type: String,
       required: [true, 'Nama barang wajib diisi'],
+    },
+    cabang: {
+      type: String,
+      default: 'Jakarta (Pusat)',
     },
     kategori: {
       type: String,
@@ -46,4 +49,8 @@ const BarangSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.models.Barang || mongoose.model('Barang', BarangSchema);
+if (mongoose.models.Barang) {
+  delete (mongoose.models as any).Barang;
+}
+
+export default mongoose.model('Barang', BarangSchema);

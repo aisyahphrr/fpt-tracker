@@ -1,9 +1,34 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Permintaan from '@/lib/models/Permintaan';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fpt_tracker_secret_jwt_key_2026';
+
+async function isAdminUser() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth_token')?.value;
+    if (!token) return false;
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    return payload?.email === 'nailah@gmail.com' || payload?.role === 'admin';
+  } catch (e) {
+    return false;
+  }
+}
 
 export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
+    const isAdmin = await isAdminUser();
+    if (!isAdmin) {
+      return NextResponse.json(
+        { message: 'Akses ditolak. Hanya Admin Sales (Nailah) yang memiliki izin untuk mengubah permintaan atau status.' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
     const body = await req.json();
     
@@ -20,6 +45,10 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
     // Hitung ulang jumlahItem dan totalQty jika ada perubahan items
     if (body.items) {
+      body.items = body.items.map((item: any) => ({
+        ...item,
+        barangId: (item.barangId && item.barangId !== '') ? item.barangId : undefined
+      }));
       body.jumlahItem = body.items.length;
       body.totalQty = body.items.reduce((acc: number, item: any) => acc + (Number(item.qty) || 0), 0);
     }
@@ -83,6 +112,14 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
 export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
+    const isAdmin = await isAdminUser();
+    if (!isAdmin) {
+      return NextResponse.json(
+        { message: 'Akses ditolak. Hanya Admin Sales (Nailah) yang memiliki izin untuk menghapus permintaan.' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
 
     await connectToDatabase();
