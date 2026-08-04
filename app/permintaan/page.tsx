@@ -2,7 +2,7 @@
 
 import { MainLayout } from '@/components/layout/main-layout'
 import { RequestTable, RequestItem as BaseRequestItem } from '@/components/permintaan/request-table'
-import { Plus, Search, Filter, Trash2, X } from 'lucide-react'
+import { Plus, Search, Filter, Trash2, X, FileText, Upload, Eye, Download, CheckCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 // Extend RequestItem to include MongoDB `_id` and nested `_id`
@@ -23,11 +23,14 @@ export default function PermintaanPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+  const [previewPdf, setPreviewPdf] = useState<{ url: string; name: string } | null>(null)
   
   const [selectedRequest, setSelectedRequest] = useState<PermintaanItem | null>(null)
   
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
+  const [uploadSuccessMsg, setUploadSuccessMsg] = useState('')
 
   // Form states
   const [formData, setFormData] = useState<Partial<PermintaanItem>>({
@@ -36,6 +39,7 @@ export default function PermintaanPage() {
     negara: '',
     tujuan: '',
     items: [{ name: '', spesifikasi: '', size: '', qty: 0, catatan: '', barangId: '' }],
+    fileQuotation: '',
     catatan: ''
   })
   const [statusUpdate, setStatusUpdate] = useState<PermintaanItem['status']>('pending')
@@ -87,6 +91,13 @@ export default function PermintaanPage() {
     }
   }
 
+  const getFileName = (url: string) => {
+    if (!url) return ''
+    const parts = url.split('/')
+    const rawName = parts[parts.length - 1]
+    return rawName.replace(/^\d+-/, '')
+  }
+
   // Handlers
   const handleDetail = (id: string) => {
     const req = requests.find(r => r.id === id)
@@ -106,8 +117,11 @@ export default function PermintaanPage() {
         negara: req.negara || '',
         tujuan: req.tujuan || '',
         items: req.items || [{ name: '', spesifikasi: '', size: '', qty: 0, catatan: '', barangId: '' }],
+        fileQuotation: req.fileQuotation || '',
         catatan: req.catatan || ''
       })
+      setError('')
+      setUploadSuccessMsg('')
       setIsEditModalOpen(true)
     }
   }
@@ -126,6 +140,42 @@ export default function PermintaanPage() {
       setSelectedRequest(req)
       setStatusUpdate(req.status)
       setIsStatusModalOpen(true)
+    }
+  }
+
+  const handleQuotationUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validasi PDF Only
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      alert('Format file tidak didukung! Mohon pilih file berformat PDF (.pdf) saja untuk Quotation.')
+      return
+    }
+
+    try {
+      setIsUploading(true)
+      setUploadSuccessMsg('')
+      const data = new FormData()
+      data.append('file', file)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: data,
+      })
+
+      const result = await res.json()
+      if (res.ok) {
+        setFormData((prev) => ({ ...prev, fileQuotation: result.fileUrl }))
+        setUploadSuccessMsg(`File Quotation "${result.fileName}" berhasil diunggah! Klik Simpan untuk menyimpan data.`)
+      } else {
+        alert(result.message || 'Gagal mengunggah Quotation PDF')
+      }
+    } catch (err) {
+      console.error('Error uploading PDF:', err)
+      alert('Terjadi kesalahan saat mengunggah Quotation PDF')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -249,9 +299,11 @@ export default function PermintaanPage() {
       negara: '',
       tujuan: '',
       items: [{ name: '', spesifikasi: '', size: '', qty: 0, catatan: '', barangId: '' }],
+      fileQuotation: '',
       catatan: ''
     })
     setError('')
+    setUploadSuccessMsg('')
     setIsAddModalOpen(true)
   }
 
@@ -268,7 +320,7 @@ export default function PermintaanPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-title mb-2">Permintaan Buyer</h1>
-        <p className="text-muted-foreground">Kelola semua permintaan dari buyer</p>
+        <p className="text-muted-foreground">Kelola semua permintaan dari buyer dan dokumen quotation PDF</p>
       </div>
 
       {/* Controls Section */}
@@ -342,6 +394,7 @@ export default function PermintaanPage() {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onUpdateStatus={handleUpdateStatus}
+          onPreviewPdf={(url, name) => setPreviewPdf({ url, name })}
         />
       )}
 
@@ -365,6 +418,13 @@ export default function PermintaanPage() {
               {error && (
                 <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
                   {error}
+                </div>
+              )}
+
+              {uploadSuccessMsg && (
+                <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded-lg border border-emerald-200 font-semibold flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>{uploadSuccessMsg}</span>
                 </div>
               )}
 
@@ -500,45 +560,93 @@ export default function PermintaanPage() {
                         <label className="text-xs text-gray-500 mb-1 block font-medium">Catatan Pembeli</label>
                         <input 
                           type="text" 
-                          placeholder="Catatan tambahan..."
+                          placeholder="Catatan..."
                           value={item.catatan || ''}
                           onChange={(e) => handleFormItemChange(index, 'catatan', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary text-sm transition-shadow"
                         />
                       </div>
-                      {formData.items!.length > 1 && (
-                        <div className="md:pt-5">
-                          <button type="button" onClick={() => removeFormItem(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors w-full md:w-auto mt-1" title="Hapus Baris">
-                            <Trash2 className="w-5 h-5 mx-auto" />
-                          </button>
-                        </div>
+                      {formData.items && formData.items.length > 1 && (
+                        <button type="button" onClick={() => removeFormItem(index)} className="text-red-500 hover:text-red-700 p-2 self-end mb-1">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
                   ))}
                 </div>
               </div>
 
+              {/* Upload Quotation (PDF Only) Section */}
+              <div className="space-y-2 border-t border-border pt-4">
+                <label className="block text-sm font-bold text-gray-800 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-red-600" />
+                  <span>Upload File Quotation (PDF Only)</span>
+                </label>
+
+                <div className="p-4 bg-red-50/40 rounded-xl border border-red-200 space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Pilih file Quotation berformat <strong>.pdf</strong> saja. File akan tersimpan secara otomatis.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 text-xs shadow-sm transition-all">
+                      <Upload className="w-4 h-4" />
+                      <span>{isUploading ? 'Mengunggah PDF...' : 'Pilih File Quotation (PDF Only)'}</span>
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        onChange={handleQuotationUpload}
+                        disabled={isUploading}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {formData.fileQuotation && (
+                      <div className="flex items-center gap-2 text-xs text-red-700 font-semibold bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">
+                        <FileText className="w-4 h-4 text-red-600" />
+                        <span className="truncate max-w-xs">{formData.fileQuotation}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-[11px] text-muted-foreground">
+                    Atau tempelkan URL / link file PDF eksternal jika ada:
+                    <input
+                      type="text"
+                      placeholder="https://.../quotation.pdf atau /uploads/..."
+                      value={formData.fileQuotation || ''}
+                      onChange={(e) => setFormData({ ...formData, fileQuotation: e.target.value })}
+                      className="mt-1 w-full px-3 py-1.5 text-xs rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Keterangan Tambahan Surat Jalan (Opsional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan Permintaan</label>
                 <textarea 
                   rows={3}
+                  placeholder="Catatan khusus dari buyer atau tim sales..."
                   value={formData.catatan || ''}
                   onChange={(e) => setFormData({...formData, catatan: e.target.value})}
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary text-sm transition-shadow"
-                  placeholder="Instruksi pengiriman, dll..."
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary text-sm transition-shadow resize-none"
                 />
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                <button 
-                  type="button" 
-                  onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false) }} 
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false) }}
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors"
                 >
                   Batal
                 </button>
-                <button type="submit" disabled={isSubmitting} className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50">
-                  {isSubmitting ? 'Menyimpan...' : (isEditModalOpen ? 'Simpan Perubahan' : 'Buat Permintaan')}
+                <button
+                  type="submit"
+                  disabled={isSubmitting || isUploading}
+                  className="btn-primary text-sm"
+                >
+                  {isSubmitting ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
             </form>
@@ -549,199 +657,163 @@ export default function PermintaanPage() {
       {/* 2. Detail Modal */}
       {isDetailModalOpen && selectedRequest && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-white border-b border-border p-6 flex items-center justify-between z-10">
-              <h2 className="text-subtitle font-bold">Detail Permintaan: <span className="text-primary">{selectedRequest.noRequest}</span></h2>
-              <button
-                onClick={() => setIsDetailModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
-              >
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-6">
+            <div className="flex justify-between items-center border-b border-border pb-4">
+              <div>
+                <h2 className="text-subtitle font-bold text-primary">{selectedRequest.noRequest}</h2>
+                <p className="text-xs text-muted-foreground">Dibuat pada {selectedRequest.tanggal}</p>
+              </div>
+              <button onClick={() => setIsDetailModalOpen(false)} className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Buyer Info */}
+            <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-xl border border-border">
               <div>
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Informasi Buyer & Pengiriman</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-8 text-sm bg-gray-50 p-5 rounded-xl border border-border shadow-sm">
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">Nama Buyer</p>
-                    <p className="font-semibold text-foreground text-base">{selectedRequest.buyer}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">Negara Buyer</p>
-                    <p className="font-semibold text-gray-900 text-base">{selectedRequest.negara || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">Tujuan Pengiriman</p>
-                    <p className="font-semibold text-gray-900 text-base">{selectedRequest.tujuan || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">Tanggal Permintaan</p>
-                    <p className="font-semibold text-foreground text-base">{selectedRequest.tanggal}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">Status</p>
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      selectedRequest.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      selectedRequest.status === 'quotation_sent' ? 'bg-purple-100 text-purple-800' :
-                      selectedRequest.status === 'signing_mou' ? 'bg-indigo-100 text-indigo-800' :
-                      selectedRequest.status === 'selesai' ? 'bg-green-100 text-green-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {selectedRequest.status === 'quotation_sent' ? 'Quotation sent' : selectedRequest.status === 'signing_mou' ? 'Signing MOU' : selectedRequest.status}
-                    </span>
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground font-medium">Buyer / Perusahaan</p>
+                <p className="font-bold text-gray-900">{selectedRequest.buyer}</p>
               </div>
-
-              {/* Items */}
               <div>
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Daftar Barang Dipesan</h3>
-                <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border bg-gray-50">
-                        <th className="px-5 py-3 text-left font-semibold text-gray-700">Nama Barang</th>
-                        <th className="px-5 py-3 text-left font-semibold text-gray-700">Spesifikasi</th>
-                        <th className="px-5 py-3 text-center font-semibold text-gray-700">Size</th>
-                        <th className="px-5 py-3 text-center font-semibold text-gray-700 w-20">Qty</th>
-                        <th className="px-5 py-3 text-left font-semibold text-gray-700">Catatan</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border bg-white">
-                      {selectedRequest.items && selectedRequest.items.length > 0 ? (
-                        selectedRequest.items.map((item: any, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50/50">
-                            <td className="px-5 py-3 text-foreground font-medium">
-                              <div>
-                                <p className="font-semibold text-gray-900">{item.name}</p>
-                                {(() => {
-                                  const found = barangList.find(b => b.nama.toLowerCase() === item.name.toLowerCase() || b._id === item.barangId)
-                                  if (!found) {
-                                    return <span className="inline-block mt-0.5 text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">📦 Non-Stok Master</span>
-                                  }
-                                  const sisaStok = (found.stokAwal || 0) + (found.barangMasuk || 0) - (found.barangKeluar || 0)
-                                  if (sisaStok <= 0) {
-                                    return <span className="inline-block mt-0.5 text-[10px] bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded">⚠️ Stok Kosong</span>
-                                  }
-                                  return null
-                                })()}
-                              </div>
-                            </td>
-                            <td className="px-5 py-3 text-gray-600">{item.spesifikasi || '-'}</td>
-                            <td className="px-5 py-3 text-center text-gray-600">{item.size || '-'}</td>
-                            <td className="px-5 py-3 text-foreground text-center font-bold bg-gray-50/50">{item.qty}</td>
-                            <td className="px-5 py-3 text-muted-foreground text-xs">{item.catatan || '-'}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={5} className="px-5 py-8 text-center text-muted-foreground">Detail barang tidak tersedia</td>
-                        </tr>
-                      )}
-                    </tbody>
-                    <tfoot className="bg-gray-100 border-t border-border">
-                      <tr>
-                        <td colSpan={3} className="px-5 py-3 font-semibold text-right text-gray-700">Total Quantity</td>
-                        <td className="px-5 py-3 font-bold text-center text-primary">{selectedRequest.totalQty}</td>
-                        <td></td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
+                <p className="text-xs text-muted-foreground font-medium">Negara Buyer</p>
+                <p className="font-bold text-gray-900">{selectedRequest.negara || '-'}</p>
               </div>
-
-              {selectedRequest.catatan && (
-                <div>
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Catatan Tambahan</h3>
-                  <p className="text-sm p-4 bg-yellow-50 text-yellow-800 rounded-xl border border-yellow-200">
-                    {selectedRequest.catatan}
-                  </p>
+              <div className="col-span-2">
+                <p className="text-xs text-muted-foreground font-medium">Tujuan Pengiriman</p>
+                <p className="font-semibold text-gray-900">{selectedRequest.tujuan || '-'}</p>
+              </div>
+              {selectedRequest.fileQuotation && (
+                <div className="col-span-2 border-t border-gray-200 pt-2">
+                  <p className="text-xs text-muted-foreground font-medium mb-1">Dokumen Quotation (PDF)</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPreviewPdf({ url: selectedRequest.fileQuotation!, name: getFileName(selectedRequest.fileQuotation!) })}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-semibold"
+                    >
+                      <Eye className="w-4 h-4 text-blue-600" />
+                      <span>Preview Quotation PDF</span>
+                    </button>
+                    <a
+                      href={selectedRequest.fileQuotation}
+                      download
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-semibold"
+                    >
+                      <Download className="w-4 h-4 text-emerald-600" />
+                      <span>Unduh PDF</span>
+                    </a>
+                  </div>
                 </div>
               )}
+            </div>
 
-              {/* Actions */}
-              <div className="flex gap-3 pt-6 border-t border-border justify-end">
-                {userRole === 'admin' && (
-                  <>
-                    <button 
-                      onClick={() => {
-                        setIsDetailModalOpen(false)
-                        handleUpdateStatus(selectedRequest.id)
-                      }} 
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                    >
-                      Update Status
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setIsDetailModalOpen(false)
-                        handleEdit(selectedRequest.id)
-                      }} 
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Edit Data
-                    </button>
-                  </>
-                )}
-                <button onClick={() => setIsDetailModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                  Tutup
-                </button>
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm mb-3">Daftar Barang Dipesan</h3>
+              <div className="divide-y divide-border border border-border rounded-xl overflow-hidden">
+                {selectedRequest.items?.map((item, idx) => (
+                  <div key={idx} className="p-3 bg-white hover:bg-gray-50 flex justify-between items-center">
+                    <div>
+                      <p className="font-bold text-sm text-gray-900">{item.name}</p>
+                      <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
+                        {item.spesifikasi && <span>Spec: {item.spesifikasi}</span>}
+                        {item.size && <span>Size: {item.size}</span>}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
+                        {item.qty} Pcs
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
+
+            {selectedRequest.catatan && (
+              <div className="text-xs bg-amber-50 text-amber-900 p-3 rounded-lg border border-amber-200">
+                <span className="font-bold block mb-1">Catatan Tambahan:</span>
+                {selectedRequest.catatan}
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button onClick={() => setIsDetailModalOpen(false)} className="btn-secondary btn-sm">
+                Tutup
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 3. Update Status Modal */}
-      {isStatusModalOpen && selectedRequest && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Update Status</h2>
-            <p className="text-sm text-gray-500 mb-6">
-              Pilih status terbaru untuk permintaan <strong className="text-gray-900">{selectedRequest.noRequest}</strong>
-            </p>
-            
-            <div className="space-y-3 mb-8">
-              {[
-                { id: 'pending', label: 'Pending', desc: 'Permintaan baru masuk' },
-                { id: 'quotation_sent', label: 'Quotation sent', desc: 'Surat penawaran telah dikirim ke buyer' },
-                { id: 'signing_mou', label: 'Signing MOU', desc: 'Proses penandatanganan kesepakatan / MOU' },
-                { id: 'selesai', label: 'Selesai', desc: 'Selesai dan otomatis memotong stok' },
-                { id: 'cancelled', label: 'Dibatalkan', desc: 'Permintaan dibatalkan' }
-              ].map((s) => (
-                <label 
-                  key={s.id} 
-                  className={`flex items-start gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
-                    statusUpdate === s.id 
-                      ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20' 
-                      : 'border-border hover:bg-gray-50'
-                  }`}
+      {/* PDF Preview Modal */}
+      {previewPdf && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-4xl rounded-2xl border border-border shadow-2xl p-6 space-y-4 max-h-[95vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="w-5 h-5 text-red-600 flex-shrink-0" />
+                <h3 className="font-bold text-gray-900 text-base truncate">Preview Quotation: {previewPdf.name}</h3>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <a
+                  href={previewPdf.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-all shadow-sm"
                 >
-                  <div className="pt-1">
-                    <input 
-                      type="radio" 
-                      name="status"
-                      value={s.id}
-                      checked={statusUpdate === s.id}
-                      onChange={(e) => setStatusUpdate(e.target.value as any)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                  </div>
-                  <div>
-                    <div className={`font-semibold text-sm capitalize ${statusUpdate === s.id ? 'text-primary' : 'text-gray-900'}`}>{s.label}</div>
-                    <div className="text-xs text-gray-500">{s.desc}</div>
-                  </div>
-                </label>
-              ))}
+                  <Download className="w-4 h-4" />
+                  <span>Buka / Unduh File</span>
+                </a>
+                <button
+                  onClick={() => setPreviewPdf(null)}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => setIsStatusModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors w-full">Batal</button>
-              <button disabled={isSubmitting} onClick={confirmStatusUpdate} className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm w-full disabled:opacity-50">
-                {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            <div className="flex-1 min-h-[60vh] bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center p-2">
+              <iframe 
+                src={(() => {
+                  const url = previewPdf.url
+                  if (url.includes('drive.google.com')) {
+                    const matchD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+                    const matchId = url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+                    const fileId = matchD ? matchD[1] : matchId ? matchId[1] : ''
+                    if (fileId) return `https://drive.google.com/file/d/${fileId}/preview`
+                  }
+                  return url
+                })()} 
+                className="w-full h-full min-h-[60vh] border-0 rounded-lg" 
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Status Update Modal */}
+      {isStatusModalOpen && selectedRequest && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h2 className="text-subtitle font-bold">Update Status Permintaan</h2>
+            <p className="text-sm text-muted-foreground">Ubah status untuk request <strong className="text-primary">{selectedRequest.noRequest}</strong> ({selectedRequest.buyer}):</p>
+            
+            <select
+              value={statusUpdate}
+              onChange={(e) => setStatusUpdate(e.target.value as any)}
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm font-semibold focus:ring-2 focus:ring-primary"
+            >
+              <option value="pending">Pending</option>
+              <option value="quotation_sent">Quotation sent</option>
+              <option value="signing_mou">Signing MOU</option>
+              <option value="selesai">Selesai (Potong Stok Otomatis)</option>
+              <option value="cancelled">Dibatalkan</option>
+            </select>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <button onClick={() => setIsStatusModalOpen(false)} className="btn-secondary btn-sm">Batal</button>
+              <button onClick={confirmStatusUpdate} disabled={isSubmitting} className="btn-primary btn-sm">
+                {isSubmitting ? 'Menyimpan...' : 'Simpan Status'}
               </button>
             </div>
           </div>
@@ -750,21 +822,14 @@ export default function PermintaanPage() {
 
       {/* 4. Delete Confirmation Modal */}
       {isDeleteModalOpen && selectedRequest && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 text-center shadow-2xl">
-            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-5 border-4 border-white shadow-sm ring-1 ring-red-100">
-              <Trash2 className="w-8 h-8 text-red-500" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Hapus Permintaan?</h2>
-            <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-              Apakah Anda yakin ingin menghapus data permintaan <strong className="text-gray-900">{selectedRequest.noRequest}</strong>? Tindakan ini tidak dapat dikembalikan.
-            </p>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h2 className="text-subtitle font-bold text-red-600">Hapus Permintaan?</h2>
+            <p className="text-sm text-muted-foreground">Apakah Anda yakin ingin menghapus permintaan <strong>{selectedRequest.noRequest}</strong> dari <strong>{selectedRequest.buyer}</strong>?</p>
 
-            <div className="flex gap-3 justify-center">
-              <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors w-full">
-                Batal
-              </button>
-              <button disabled={isSubmitting} onClick={confirmDelete} className="px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm w-full disabled:opacity-50">
+            <div className="flex justify-end gap-3 pt-4">
+              <button onClick={() => setIsDeleteModalOpen(false)} className="btn-secondary btn-sm">Batal</button>
+              <button onClick={confirmDelete} disabled={isSubmitting} className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg text-sm">
                 {isSubmitting ? 'Menghapus...' : 'Ya, Hapus'}
               </button>
             </div>

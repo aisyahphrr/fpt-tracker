@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Permintaan from '@/lib/models/Permintaan';
+import BahanBaku from '@/lib/models/BahanBaku';
+import StrukturBiaya from '@/lib/models/StrukturBiaya';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 
@@ -43,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { tanggal, buyer, negara, tujuan, items, catatan } = body;
+    const { tanggal, buyer, negara, tujuan, items, catatan, fileQuotation } = body;
 
     if (!buyer || !items || items.length === 0) {
       return NextResponse.json({ message: 'Buyer dan minimal 1 barang wajib diisi' }, { status: 400 });
@@ -75,8 +77,30 @@ export async function POST(req: Request) {
       jumlahItem,
       totalQty,
       items: sanitizedItems,
+      fileQuotation: fileQuotation || '',
       catatan: catatan || '',
       status: 'pending'
+    });
+
+    // Buat data Bahan Baku otomatis per item barang dalam permintaan
+    for (const item of sanitizedItems) {
+      await BahanBaku.create({
+        noRequest,
+        barang: item.name,
+        qty: item.qty || 1,
+        sumber: item.spesifikasi || item.size ? [{ namaSumber: 'Utama', harga: 0, size: item.size || '', spesifikasi: item.spesifikasi || '' }] : [],
+        linkFotoGdrive: '',
+        linkVideoGdrive: '',
+      });
+    }
+
+    // Buat data Struktur Biaya otomatis untuk Permintaan ini
+    await StrukturBiaya.create({
+      noRequest,
+      buyer,
+      logistik: '',
+      filePerhitungan: '',
+      catatan: '',
     });
 
     return NextResponse.json({ message: 'Permintaan berhasil dibuat', data: newPermintaan }, { status: 201 });
@@ -85,3 +109,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: 'Terjadi kesalahan saat membuat permintaan' }, { status: 500 });
   }
 }
+

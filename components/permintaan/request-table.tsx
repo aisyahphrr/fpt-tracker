@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit, Trash2, Eye, MoreVertical, Download } from 'lucide-react'
+import { Edit, Trash2, Eye, MoreVertical, Download, FileText } from 'lucide-react'
 import { useState } from 'react'
 
 export interface RequestItem {
@@ -12,6 +12,7 @@ export interface RequestItem {
   tujuan?: string
   jumlahItem: number
   totalQty: number
+  fileQuotation?: string
   status: 'pending' | 'quotation_sent' | 'signing_mou' | 'selesai' | 'cancelled'
   items?: { name: string; qty: number; catatan?: string; barangId?: string; spesifikasi?: string; size?: string }[]
   catatan?: string
@@ -58,15 +59,23 @@ interface RequestTableProps {
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
   onUpdateStatus?: (id: string) => void
+  onPreviewPdf?: (url: string, name: string) => void
 }
 
-export function RequestTable({ data, userRole = 'admin', onDetail, onEdit, onDelete, onUpdateStatus }: RequestTableProps) {
+export function RequestTable({ data, userRole = 'admin', onDetail, onEdit, onDelete, onUpdateStatus, onPreviewPdf }: RequestTableProps) {
   const [expandedRows, setExpandedRows] = useState<string[]>([])
 
   const toggleActionMenu = (id: string) => {
     setExpandedRows((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     )
+  }
+
+  const getFileName = (url: string) => {
+    if (!url) return ''
+    const parts = url.split('/')
+    const rawName = parts[parts.length - 1]
+    return rawName.replace(/^\d+-/, '')
   }
 
   return (
@@ -82,6 +91,7 @@ export function RequestTable({ data, userRole = 'admin', onDetail, onEdit, onDel
               <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Negara / Tujuan</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Jumlah Item</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Total Qty</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Quotation (PDF)</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Status</th>
               <th className="px-6 py-3 text-center text-sm font-semibold text-foreground">Action</th>
             </tr>
@@ -108,6 +118,36 @@ export function RequestTable({ data, userRole = 'admin', onDetail, onEdit, onDel
                 </td>
                 <td className="px-6 py-4 text-sm text-foreground text-center">{request.jumlahItem}</td>
                 <td className="px-6 py-4 text-sm text-foreground text-center">{request.totalQty}</td>
+                <td className="px-6 py-4 text-sm">
+                  {request.fileQuotation ? (
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded truncate max-w-[150px]" title={getFileName(request.fileQuotation)}>
+                        📄 {getFileName(request.fileQuotation)}
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <button
+                          onClick={() => onPreviewPdf?.(request.fileQuotation!, getFileName(request.fileQuotation!))}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded text-xs font-semibold"
+                        >
+                          <Eye className="w-3 h-3 text-blue-600" />
+                          <span>Preview</span>
+                        </button>
+                        <a
+                          href={request.fileQuotation}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded text-xs font-semibold"
+                        >
+                          <Download className="w-3 h-3 text-emerald-600" />
+                          <span>Unduh</span>
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400 italic">Belum ada Quotation</span>
+                  )}
+                </td>
                 <td className="px-6 py-4 text-sm">
                   <span className={getStatusBadge(request.status)}>{getStatusLabel(request.status)}</span>
                 </td>

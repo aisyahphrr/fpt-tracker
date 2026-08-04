@@ -61,6 +61,10 @@ const PermintaanSchema = new mongoose.Schema(
       required: true
     },
     items: [RequestItemSchema],
+    fileQuotation: {
+      type: String,
+      default: ''
+    },
     status: {
       type: String,
       enum: ['pending', 'quotation_sent', 'signing_mou', 'selesai', 'cancelled'],
@@ -72,8 +76,13 @@ const PermintaanSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    strict: false
   }
 );
 
-export default mongoose.models.Permintaan || mongoose.model('Permintaan', PermintaanSchema);
+if (mongoose.models.Permintaan) {
+  delete (mongoose.models as any).Permintaan;
+}
+
+export default mongoose.model('Permintaan', PermintaanSchema);

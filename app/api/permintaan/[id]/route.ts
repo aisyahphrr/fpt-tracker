@@ -60,6 +60,10 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
       { new: true, runValidators: true }
     );
 
+    if (!updatedPermintaan) {
+      return NextResponse.json({ message: 'Gagal memperbarui data permintaan' }, { status: 500 });
+    }
+
     // Otomatisasi Pemotongan/Pengembalian Stok
     const Barang = (await import('@/lib/models/Barang')).default;
     const Mutasi = (await import('@/lib/models/Mutasi')).default;

@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   ShoppingCart,
+  Layers,
+  Calculator,
   Package,
   BarChart3,
   FileText,
@@ -24,6 +26,8 @@ export function Sidebar({ userRole = 'admin', userName = 'Admin User', userEmail
   const allMenuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/permintaan', label: 'Permintaan Buyer', icon: ShoppingCart },
+    { href: '/bahan-baku', label: 'Bahan Baku', icon: Layers },
+    { href: '/struktur-biaya', label: 'Struktur Biaya', icon: Calculator },
     { href: '/barang', label: 'Barang', icon: Package },
     { href: '/stok', label: 'Stok Barang', icon: BarChart3 },
     { href: '/laporan', label: 'Laporan', icon: FileText },
