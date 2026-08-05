@@ -13,7 +13,9 @@ async function isAdminUser() {
     if (!token) return false;
     const secret = new TextEncoder().encode(JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
-    return payload?.email === 'nailah@gmail.com' || payload?.role === 'admin';
+    const email = ((payload?.email as string) || '').toLowerCase();
+    const name = ((payload?.name as string) || '').toLowerCase();
+    return email.includes('nailah') || name.includes('nailah') || payload?.role === 'admin';
   } catch (e) {
     return false;
   }
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
     const newBarang = await Barang.create({
       kode,
       nama,
-      cabang: cabang || 'Jakarta (Pusat)',
+      cabang: cabang || 'Jakarta',
       kategori,
       satuan,
       deskripsi: deskripsi || '',

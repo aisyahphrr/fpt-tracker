@@ -44,7 +44,7 @@ export default function PermintaanPage() {
   })
   const [statusUpdate, setStatusUpdate] = useState<PermintaanItem['status']>('pending')
 
-  const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff')
+  const [userRole, setUserRole] = useState<'admin' | 'staff'>('admin')
 
   useEffect(() => {
     fetchProfile()

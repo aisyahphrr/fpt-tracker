@@ -5,7 +5,7 @@ import User from '@/lib/models/User';
 import { jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'fpt_tracker_secret_jwt_key_2026';
 const key = new TextEncoder().encode(JWT_SECRET);
 
 async function getUserIdFromToken() {
@@ -20,10 +20,11 @@ async function getUserIdFromToken() {
   }
 }
 
-function isNailah(email?: string) {
-  if (!email) return false;
-  const e = email.toLowerCase().trim();
-  return e.includes('nailah');
+function checkIsNailahOrAdmin(user: any) {
+  if (!user) return false;
+  const email = (user.email || '').toLowerCase().trim();
+  const name = (user.name || '').toLowerCase().trim();
+  return email.includes('nailah') || name.includes('nailah') || user.role === 'admin';
 }
 
 export async function GET() {
@@ -39,7 +40,7 @@ export async function GET() {
 
     if (!user) {
       // Fallback: Cari user Nailah
-      user = await User.findOne({ email: /nailah/i }).select('-password');
+      user = await User.findOne({ $or: [{ email: /nailah/i }, { name: /nailah/i }] }).select('-password');
       
       if (!user) {
         const hashedPassword = await bcrypt.hash('admin123', 10);
@@ -56,9 +57,10 @@ export async function GET() {
       }
     }
 
-    // Enforce role & posisi: Hanya Nailah yang Admin (Admin Sales), selain Nailah PASTI Staff (Staff Sales)
-    const isUserAdmin = isNailah(user.email);
+    // Enforce role & posisi: Jika user Nailah / Admin -> Admin (Admin Sales), selain itu Staff (Staff Sales)
+    const isUserAdmin = checkIsNailahOrAdmin(user);
     const correctRole = isUserAdmin ? 'admin' : 'staff';
+    const correctPosisi = isUserAdmin ? (user.posisi || 'Admin Sales') : 'Staff Sales';
 
     let updateNeeded = false;
     const updateObj: any = {};
@@ -69,9 +71,9 @@ export async function GET() {
       updateNeeded = true;
     }
 
-    if (!isUserAdmin && (!user.posisi || user.posisi === 'Admin Sales')) {
-      updateObj.posisi = 'Staff Sales';
-      user.posisi = 'Staff Sales';
+    if (user.posisi !== correctPosisi) {
+      updateObj.posisi = correctPosisi;
+      user.posisi = correctPosisi;
       updateNeeded = true;
     }
 
@@ -81,9 +83,7 @@ export async function GET() {
 
     const userObj = user.toObject ? user.toObject() : user;
     userObj.role = correctRole;
-    if (!isUserAdmin && (!userObj.posisi || userObj.posisi === 'Admin Sales')) {
-      userObj.posisi = 'Staff Sales';
-    }
+    userObj.posisi = correctPosisi;
 
     return NextResponse.json(userObj, { status: 200 });
   } catch (error: any) {
@@ -106,26 +106,22 @@ export async function PUT(req: Request) {
     }
 
     if (!user) {
-      user = await User.findOne({ email: /nailah/i });
+      user = await User.findOne({ $or: [{ email: /nailah/i }, { name: /nailah/i }] });
     }
 
     if (!user) {
       return NextResponse.json({ message: 'User tidak ditemukan' }, { status: 404 });
     }
 
-    const isUserAdmin = isNailah(user.email || email);
+    const isUserAdmin = checkIsNailahOrAdmin({ email: email || user.email, name: name || user.name, role: user.role });
     const correctRole = isUserAdmin ? 'admin' : 'staff';
-    let targetPosisi = posisi;
-    if (!isUserAdmin && (!targetPosisi || targetPosisi === 'Admin Sales')) {
-      targetPosisi = 'Staff Sales';
-    }
+    let targetPosisi = isUserAdmin ? (posisi || user.posisi || 'Admin Sales') : 'Staff Sales';
 
-    const updateData: any = { role: correctRole };
+    const updateData: any = { role: correctRole, posisi: targetPosisi };
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
     if (telepon !== undefined) updateData.telepon = telepon;
     if (alamat !== undefined) updateData.alamat = alamat;
-    if (targetPosisi !== undefined) updateData.posisi = targetPosisi;
     if (departemen !== undefined) updateData.departemen = departemen;
 
     const updatedUser = await User.findByIdAndUpdate(

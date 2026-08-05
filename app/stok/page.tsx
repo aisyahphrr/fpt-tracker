@@ -28,11 +28,17 @@ interface MutasiItem {
 }
 
 const DEFAULT_CABANG = [
-  'Jakarta (Pusat)',
-  'Surabaya',
-  'Bandung',
-  'Medan',
-  'Semarang'
+  'Jakarta',
+  'Ambon',
+  'Makassar',
+  'Benoa',
+  'Bacan',
+  'Brondong',
+  'Pemangkat',
+  'Bitung',
+  'Belawan',
+  'Pekalongan',
+  'Sorong'
 ]
 
 const BULAN_OPTIONS = [
@@ -86,7 +92,7 @@ export default function StokPage() {
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<StokItem | null>(null)
   const [modalBulanFilter, setModalBulanFilter] = useState('Semua')
 
-  const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff')
+  const [userRole, setUserRole] = useState<'admin' | 'staff'>('admin')
 
   useEffect(() => {
     fetchProfile()
@@ -228,7 +234,7 @@ export default function StokPage() {
 
     return stokList
       .filter(item => {
-        const matchesCabang = selectedCabangFilter === 'Semua Cabang' ? true : (item.cabang || 'Jakarta (Pusat)') === selectedCabangFilter
+        const matchesCabang = selectedCabangFilter === 'Semua Cabang' ? true : (item.cabang || 'Jakarta') === selectedCabangFilter
         const matchesNama = selectedNamaFilter === 'Semua Barang' ? true : item.nama.trim().toLowerCase() === selectedNamaFilter.toLowerCase()
         const matchesSearch = searchQuery === '' ? true : (
           item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -356,7 +362,7 @@ export default function StokPage() {
     doc.setFontSize(16)
     doc.text(`Histori Mutasi Stok: ${selectedHistoryItem.nama}`, 14, 20)
     doc.setFontSize(11)
-    doc.text(`SKU: ${selectedHistoryItem.kode} | Cabang: ${selectedHistoryItem.cabang || 'Jakarta (Pusat)'} | Periode: ${periodeLabel}`, 14, 28)
+    doc.text(`SKU: ${selectedHistoryItem.kode} | Cabang: ${selectedHistoryItem.cabang || 'Jakarta'} | Periode: ${periodeLabel}`, 14, 28)
 
     autoTable(doc, {
       startY: 35,
@@ -543,7 +549,7 @@ export default function StokPage() {
                     <td className="px-5 py-3.5 font-semibold text-gray-900">{item.nama}</td>
                     <td className="px-5 py-3.5 text-center whitespace-nowrap">
                       <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200 whitespace-nowrap shadow-2xs">
-                        📍 {item.cabang || 'Jakarta (Pusat)'}
+                        📍 {item.cabang || 'Jakarta'}
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-green-600 text-center font-bold whitespace-nowrap">
@@ -638,7 +644,7 @@ export default function StokPage() {
                 <span className="block font-bold mb-1">{selectedItem.nama}</span>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-blue-600">SKU: {selectedItem.kode}</span>
-                  <span className="font-bold bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded">📍 {selectedItem.cabang || 'Jakarta (Pusat)'}</span>
+                  <span className="font-bold bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded">📍 {selectedItem.cabang || 'Jakarta'}</span>
                 </div>
               </div>
 
@@ -755,7 +761,7 @@ export default function StokPage() {
                   <h4 className="font-extrabold text-purple-950 text-lg mb-1">{selectedHistoryItem.nama}</h4>
                   <div className="flex flex-wrap items-center gap-3 text-xs text-purple-800">
                     <span className="bg-white px-2 py-0.5 rounded border border-purple-200">SKU: <strong>{selectedHistoryItem.kode}</strong></span>
-                    <span className="bg-white px-2 py-0.5 rounded border border-purple-200">📍 Cabang: <strong>{selectedHistoryItem.cabang || 'Jakarta (Pusat)'}</strong></span>
+                    <span className="bg-white px-2 py-0.5 rounded border border-purple-200">📍 Cabang: <strong>{selectedHistoryItem.cabang || 'Jakarta'}</strong></span>
                     <span className="bg-purple-100 text-purple-900 px-2 py-0.5 rounded border border-purple-300 font-bold">
                       📅 Periode: {getMonthLabel(modalBulanFilter)} {selectedTahun}
                     </span>

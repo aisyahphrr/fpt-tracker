@@ -5,7 +5,7 @@ import User from '@/lib/models/User';
 import bcrypt from 'bcryptjs';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'fpt_tracker_secret_jwt_key_2026';
 const key = new TextEncoder().encode(JWT_SECRET);
 
 async function getUserIdFromToken() {

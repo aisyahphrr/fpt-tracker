@@ -12,7 +12,7 @@ const BarangSchema = new mongoose.Schema(
     },
     cabang: {
       type: String,
-      default: 'Jakarta (Pusat)',
+      default: 'Jakarta',
     },
     kategori: {
       type: String,

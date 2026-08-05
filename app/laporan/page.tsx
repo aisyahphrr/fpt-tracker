@@ -139,7 +139,7 @@ export default function LaporanPage() {
     return {
       kode: b.kode,
       nama: b.nama,
-      cabang: b.cabang || 'Jakarta (Pusat)',
+      cabang: b.cabang || 'Jakarta',
       kategori: b.kategori,
       masukBulanIni,
       keluarBulanIni,

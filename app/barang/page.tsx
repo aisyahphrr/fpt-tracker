@@ -19,11 +19,17 @@ interface BarangItem {
 }
 
 const DEFAULT_CABANG = [
-  'Jakarta (Pusat)',
-  'Surabaya',
-  'Bandung',
-  'Medan',
-  'Semarang'
+  'Jakarta',
+  'Ambon',
+  'Makassar',
+  'Benoa',
+  'Bacan',
+  'Brondong',
+  'Pemangkat',
+  'Bitung',
+  'Belawan',
+  'Pekalongan',
+  'Sorong'
 ]
 
 export default function BarangPage() {
@@ -50,7 +56,7 @@ export default function BarangPage() {
   const [formData, setFormData] = useState({
     kode: '',
     nama: '',
-    cabangSelect: 'Jakarta (Pusat)',
+    cabangSelect: 'Jakarta',
     cabangCustom: '',
     kategori: '',
     satuan: '',
@@ -59,7 +65,7 @@ export default function BarangPage() {
     status: 'aktif'
   })
 
-  const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff')
+  const [userRole, setUserRole] = useState<'admin' | 'staff'>('admin')
 
   useEffect(() => {
     fetchProfile()
@@ -151,11 +157,11 @@ export default function BarangPage() {
   // Handle Edit
   const openEditModal = (barang: BarangItem) => {
     setSelectedBarang(barang)
-    const isDefault = DEFAULT_CABANG.includes(barang.cabang || 'Jakarta (Pusat)')
+    const isDefault = DEFAULT_CABANG.includes(barang.cabang || 'Jakarta')
     setFormData({
       kode: barang.kode,
       nama: barang.nama,
-      cabangSelect: isDefault ? (barang.cabang || 'Jakarta (Pusat)') : 'Lainnya',
+      cabangSelect: isDefault ? (barang.cabang || 'Jakarta') : 'Lainnya',
       cabangCustom: isDefault ? '' : (barang.cabang || ''),
       kategori: barang.kategori,
       satuan: barang.satuan,
@@ -237,7 +243,7 @@ export default function BarangPage() {
     setFormData({
       kode: '',
       nama: '',
-      cabangSelect: 'Jakarta (Pusat)',
+      cabangSelect: 'Jakarta',
       cabangCustom: '',
       kategori: '',
       satuan: '',
@@ -272,7 +278,7 @@ export default function BarangPage() {
       const matchesSearch = b.nama.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             b.kode.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (b.cabang || '').toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesCabang = selectedCabangFilter === 'Semua Cabang' ? true : (b.cabang || 'Jakarta (Pusat)') === selectedCabangFilter
+      const matchesCabang = selectedCabangFilter === 'Semua Cabang' ? true : (b.cabang || 'Jakarta') === selectedCabangFilter
       const matchesNama = selectedNamaFilter === 'Semua Barang' ? true : b.nama.trim().toLowerCase() === selectedNamaFilter.toLowerCase()
       return matchesSearch && matchesCabang && matchesNama
     })
@@ -284,7 +290,7 @@ export default function BarangPage() {
     barangList.forEach(b => {
       const nameKey = b.nama.trim().toLowerCase()
       const currentStok = (b.stokAwal || 0) + (b.barangMasuk || 0) - (b.barangKeluar || 0)
-      const branchName = b.cabang || 'Jakarta (Pusat)'
+      const branchName = b.cabang || 'Jakarta'
 
       if (!map[nameKey]) {
         map[nameKey] = { totalStok: 0, branches: {} }
@@ -407,7 +413,7 @@ export default function BarangPage() {
                       </td>
                       <td className="px-5 py-3.5 text-center whitespace-nowrap">
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-800 text-xs font-bold rounded-full border border-blue-200 whitespace-nowrap shadow-2xs">
-                          📍 {barang.cabang || 'Jakarta (Pusat)'}
+                          📍 {barang.cabang || 'Jakarta'}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-gray-700 capitalize whitespace-nowrap">{barang.kategori}</td>
@@ -648,7 +654,8 @@ export default function BarangPage() {
                       type="number"
                       name="stokAwal"
                       min={0}
-                      value={formData.stokAwal}
+                      placeholder="0"
+                      value={formData.stokAwal === 0 || (formData.stokAwal as any) === '' ? '' : formData.stokAwal}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary text-sm"
                     />

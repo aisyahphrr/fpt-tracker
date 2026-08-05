@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from 'react'
 interface SumberItem {
   _id?: string
   namaSumber: string
-  harga: number
+  harga: number | string
   size: string
   spesifikasi: string
 }
@@ -37,8 +37,8 @@ export default function BahanBakuPage() {
   const [selectedNoRequestFilter, setSelectedNoRequestFilter] = useState('Semua No. Permintaan')
   const [isLoading, setIsLoading] = useState(true)
 
-  // User Role State (default 'staff' to be safe)
-  const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff')
+  // User Role State
+  const [userRole, setUserRole] = useState<'admin' | 'staff'>('admin')
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -150,7 +150,7 @@ export default function BahanBakuPage() {
       sumber: [
         {
           namaSumber: '',
-          harga: 0,
+          harga: '',
           size: '',
           spesifikasi: '',
         },
@@ -172,7 +172,7 @@ export default function BahanBakuPage() {
       noRequest: item.noRequest,
       barang: item.barang,
       qty: item.qty,
-      sumber: item.sumber && item.sumber.length > 0 ? item.sumber : [{ namaSumber: '', harga: 0, size: '', spesifikasi: '' }],
+      sumber: item.sumber && item.sumber.length > 0 ? item.sumber : [{ namaSumber: '', harga: '', size: '', spesifikasi: '' }],
       filePerhitungan: item.filePerhitungan || '',
       linkFotoGdrive: item.linkFotoGdrive || '',
       linkVideoGdrive: item.linkVideoGdrive || '',
@@ -217,7 +217,7 @@ export default function BahanBakuPage() {
   const handleAddSumber = () => {
     setFormData((prev) => ({
       ...prev,
-      sumber: [...prev.sumber, { namaSumber: '', harga: 0, size: '', spesifikasi: '' }],
+      sumber: [...prev.sumber, { namaSumber: '', harga: '', size: '', spesifikasi: '' }],
     }))
   }
 
@@ -257,7 +257,10 @@ export default function BahanBakuPage() {
         noRequest: formData.noRequest,
         barang: formData.barang,
         qty: Number(formData.qty) || 1,
-        sumber: formData.sumber,
+        sumber: formData.sumber.map((s) => ({
+          ...s,
+          harga: s.harga === '' ? 0 : Number(s.harga) || 0,
+        })),
         filePerhitungan: formData.filePerhitungan,
         linkFotoGdrive: formData.linkFotoGdrive,
         linkVideoGdrive: formData.linkVideoGdrive,
@@ -309,8 +312,8 @@ export default function BahanBakuPage() {
     }
   }
 
-  const formatRupiah = (val: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
+  const formatRupiah = (val: number | string) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(val) || 0)
   }
 
   return (
@@ -601,8 +604,9 @@ export default function BahanBakuPage() {
                     <input
                       type="number"
                       min={1}
-                      value={formData.qty}
-                      onChange={(e) => setFormData({ ...formData, qty: Number(e.target.value) })}
+                      placeholder="1"
+                      value={(formData.qty as any) === 0 || (formData.qty as any) === '' ? '' : formData.qty}
+                      onChange={(e) => setFormData({ ...formData, qty: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
@@ -657,8 +661,8 @@ export default function BahanBakuPage() {
                           <input
                             type="number"
                             placeholder="0"
-                            value={s.harga}
-                            onChange={(e) => handleSumberChange(idx, 'harga', Number(e.target.value))}
+                            value={s.harga === 0 || s.harga === '0' ? '' : s.harga}
+                            onChange={(e) => handleSumberChange(idx, 'harga', e.target.value === '' ? '' : Number(e.target.value))}
                             className="w-full px-3 py-1.5 text-xs rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
                           />
                         </div>

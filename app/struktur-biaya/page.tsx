@@ -28,7 +28,7 @@ export default function StrukturBiayaPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   // User Role State (default 'staff' to be safe)
-  const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff')
+  const [userRole, setUserRole] = useState<'admin' | 'staff'>('admin')
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false)
