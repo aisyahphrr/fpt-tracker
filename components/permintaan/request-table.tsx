@@ -13,7 +13,7 @@ export interface RequestItem {
   jumlahItem: number
   totalQty: number
   fileQuotation?: string
-  status: 'pending' | 'quotation_sent' | 'signing_mou' | 'selesai' | 'cancelled'
+  status: 'pending' | 'processed_by_sbb' | 'processed_by_pl' | 'price_processed_by_sbd' | 'rejected' | 'quotation_sent'
   items?: { name: string; qty: number; catatan?: string; barangId?: string; spesifikasi?: string; size?: string }[]
   catatan?: string
 }
@@ -21,17 +21,19 @@ export interface RequestItem {
 function getStatusBadge(status: string) {
   switch (status) {
     case 'pending':
-      return 'badge-pending'
-    case 'quotation_sent':
-      return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800'
-    case 'signing_mou':
+      return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800'
+    case 'processed_by_sbb':
+      return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800'
+    case 'processed_by_pl':
+      return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800'
+    case 'price_processed_by_sbd':
       return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800'
-    case 'selesai':
-      return 'badge-success'
-    case 'cancelled':
-      return 'badge-error'
+    case 'rejected':
+      return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800'
+    case 'quotation_sent':
+      return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800'
     default:
-      return 'badge-pending'
+      return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800'
   }
 }
 
@@ -39,14 +41,16 @@ function getStatusLabel(status: string) {
   switch (status) {
     case 'pending':
       return 'Pending'
+    case 'processed_by_sbb':
+      return 'Processed by SBB'
+    case 'processed_by_pl':
+      return 'Processed by PL'
+    case 'price_processed_by_sbd':
+      return 'Price processed by SBD'
+    case 'rejected':
+      return 'Rejected'
     case 'quotation_sent':
-      return 'Quotation sent'
-    case 'signing_mou':
-      return 'Signing MOU'
-    case 'selesai':
-      return 'Selesai'
-    case 'cancelled':
-      return 'Dibatalkan'
+      return 'Quotation Sent'
     default:
       return status
   }

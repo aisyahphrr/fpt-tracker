@@ -95,10 +95,11 @@ export default function DashboardPage() {
   // --- DERIVED METRICS ---
   const totalPermintaan = permintaanList.length
   const totalPending = permintaanList.filter((p) => p.status === 'pending').length
+  const totalProcessedSbb = permintaanList.filter((p: any) => p.status === 'processed_by_sbb').length
+  const totalProcessedPl = permintaanList.filter((p: any) => p.status === 'processed_by_pl').length
+  const totalPriceSbd = permintaanList.filter((p: any) => p.status === 'price_processed_by_sbd').length
+  const totalRejected = permintaanList.filter((p: any) => p.status === 'rejected').length
   const totalQuotationSent = permintaanList.filter((p: any) => p.status === 'quotation_sent').length
-  const totalSigningMou = permintaanList.filter((p: any) => p.status === 'signing_mou').length
-  const totalSelesai = permintaanList.filter((p) => p.status === 'selesai').length
-  const totalCancelled = permintaanList.filter((p) => p.status === 'cancelled').length
 
   const totalBarangKeluar = barangList.reduce((acc, b) => acc + (b.barangKeluar || 0), 0)
   const totalStokTersedia = barangList.reduce(
@@ -143,17 +144,18 @@ export default function DashboardPage() {
   const statusPieData = useMemo(() => {
     const data = [
       { name: 'Pending', value: totalPending, color: '#eab308' },
-      { name: 'Quotation sent', value: totalQuotationSent, color: '#a855f7' },
-      { name: 'Signing MOU', value: totalSigningMou, color: '#6366f1' },
-      { name: 'Selesai', value: totalSelesai, color: '#22c55e' },
-      { name: 'Dibatalkan', value: totalCancelled, color: '#ef4444' },
+      { name: 'Processed by SBB', value: totalProcessedSbb, color: '#f59e0b' },
+      { name: 'Processed by PL', value: totalProcessedPl, color: '#3b82f6' },
+      { name: 'Price processed by SBD', value: totalPriceSbd, color: '#6366f1' },
+      { name: 'Rejected', value: totalRejected, color: '#ef4444' },
+      { name: 'Quotation Sent', value: totalQuotationSent, color: '#10b981' },
     ].filter((item) => item.value > 0)
 
     if (data.length === 0) {
       return [{ name: 'Belum Ada Transaksi', value: 1, color: '#cbd5e1' }]
     }
     return data
-  }, [totalPending, totalQuotationSent, totalSigningMou, totalSelesai, totalCancelled])
+  }, [totalPending, totalProcessedSbb, totalProcessedPl, totalPriceSbd, totalRejected, totalQuotationSent])
 
   // --- TOP PRODUCTS BAR CHART DATA ---
   const topProductsData = useMemo(() => {
@@ -204,16 +206,16 @@ export default function DashboardPage() {
         />
 
         <SummaryCard
-          title="Quotation Sent"
-          value={totalQuotationSent.toString()}
+          title="Processed SBB"
+          value={totalProcessedSbb.toString()}
           icon={<TrendingUp className="w-6 h-6" />}
-          backgroundColor="bg-purple-50"
-          iconColor="text-purple-600"
+          backgroundColor="bg-amber-50"
+          iconColor="text-amber-600"
         />
 
         <SummaryCard
-          title="Total Selesai"
-          value={totalSelesai.toString()}
+          title="Quotation Sent"
+          value={totalQuotationSent.toString()}
           icon={<CheckCircle className="w-6 h-6" />}
           backgroundColor="bg-green-50"
           iconColor="text-green-600"

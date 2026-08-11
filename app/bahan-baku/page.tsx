@@ -577,7 +577,7 @@ export default function BahanBakuPage() {
                       type="text"
                       value={formData.noRequest}
                       onChange={(e) => setFormData({ ...formData, noRequest: e.target.value })}
-                      placeholder="Contoh: REQ-2026-001"
+                      placeholder="Contoh: INQ-2026-001"
                       className="w-full px-3 py-2 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
                       required
                     />

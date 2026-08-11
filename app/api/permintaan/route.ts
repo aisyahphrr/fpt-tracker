@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     const today = new Date();
     const year = today.getFullYear();
     const count = await Permintaan.countDocuments();
-    const noRequest = `REQ-${year}-${(count + 1).toString().padStart(3, '0')}`;
+    const noRequest = `INQ-${year}-${(count + 1).toString().padStart(3, '0')}`;
 
     // Hitung total item & qty, dan bersihkan barangId jika kosong
     const sanitizedItems = items.map((item: any) => ({

@@ -109,7 +109,7 @@ export function ActivityLog() {
               id: `mutasi-${m._id}`,
               type: 'info',
               title: 'Stok Masuk Diperbarui',
-              description: `${namaBarang} (+${m.qty} unit)`,
+              description: `${namaBarang} (+${m.qty} Kg)`,
               timestamp: formatDate(dateObj),
               rawDate: dateObj
             })
@@ -127,7 +127,7 @@ export function ActivityLog() {
               id: `warning-${b._id}`,
               type: 'error',
               title: sisaStok === 0 ? 'Stok Habis' : 'Stok Menipis',
-              description: `${b.nama} (Sisa ${sisaStok} unit)`,
+              description: `${b.nama} (Sisa ${sisaStok} Kg)`,
               timestamp: 'Perhatian Sistem',
               rawDate: new Date()
             })

@@ -67,7 +67,7 @@ const PermintaanSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'quotation_sent', 'signing_mou', 'selesai', 'cancelled'],
+      enum: ['pending', 'processed_by_sbb', 'processed_by_pl', 'price_processed_by_sbd', 'rejected', 'quotation_sent'],
       default: 'pending'
     },
     catatan: {

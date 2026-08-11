@@ -300,6 +300,42 @@ export default function StokPage() {
   const stokMenipis = calculatedStok.filter((item) => item.status === 'menipis').length
   const stokHabis = calculatedStok.filter((item) => item.status === 'habis').length
 
+  // Total Stok per Cabang calculation
+  const stokPerCabang = useMemo(() => {
+    const isFilteredByPeriod = selectedBulan !== 'Semua' || selectedTahun !== 'Semua'
+    const branchMap: { [cabang: string]: { totalSisa: number; itemCount: number } } = {}
+
+    allBranches.forEach(cab => {
+      branchMap[cab] = { totalSisa: 0, itemCount: 0 }
+    })
+
+    stokList.forEach(item => {
+      const cab = item.cabang || 'Jakarta'
+      if (!branchMap[cab]) {
+        branchMap[cab] = { totalSisa: 0, itemCount: 0 }
+      }
+
+      const stokAwal = item.stokAwal || 0
+      let barangMasuk = item.barangMasuk || 0
+      let barangKeluar = item.barangKeluar || 0
+
+      if (isFilteredByPeriod && mutasiPerBarang[item._id]) {
+        barangMasuk = mutasiPerBarang[item._id].masuk
+        barangKeluar = mutasiPerBarang[item._id].keluar
+      }
+
+      const sisaStok = stokAwal + barangMasuk - barangKeluar
+      branchMap[cab].totalSisa += sisaStok
+      branchMap[cab].itemCount += 1
+    })
+
+    return branchMap
+  }, [stokList, allBranches, selectedBulan, selectedTahun, mutasiPerBarang])
+
+  const totalStokSemuaCabang = useMemo(() => {
+    return Object.values(stokPerCabang).reduce((acc, curr) => acc + curr.totalSisa, 0)
+  }, [stokPerCabang])
+
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'aman': return 'bg-green-100 text-green-700'
@@ -421,38 +457,83 @@ export default function StokPage() {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <SummaryCard
-          title="Total Barang"
-          value={totalBarang}
-          icon={<Package className="w-6 h-6" />}
-          backgroundColor="bg-blue-50"
-          iconColor="text-blue-600"
-        />
-        <SummaryCard
-          title="Stok Aman"
-          value={stokAman}
-          icon={<CheckCircle className="w-6 h-6" />}
-          trend={totalBarang > 0 ? "up" : undefined}
-          trendValue={totalBarang > 0 ? `${Math.round((stokAman / totalBarang) * 100)}%` : undefined}
-          backgroundColor="bg-green-50"
-          iconColor="text-green-600"
-        />
-        <SummaryCard
-          title="Stok Menipis"
-          value={stokMenipis}
-          icon={<AlertTriangle className="w-6 h-6" />}
-          backgroundColor="bg-yellow-50"
-          iconColor="text-yellow-600"
-        />
-        <SummaryCard
-          title="Stok Habis"
-          value={stokHabis}
-          icon={<TrendingDown className="w-6 h-6" />}
-          backgroundColor="bg-red-50"
-          iconColor="text-red-600"
-        />
+      {/* Total Stok Semua Cabang & Breakdown Per Cabang */}
+      <div className="space-y-4 mb-8">
+        {/* Main Card: Total Stok Semua Cabang */}
+        <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white rounded-2xl p-6 shadow-md border border-blue-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+              <Building2 className="w-7 h-7 text-blue-200" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-blue-200 font-semibold mb-1">
+                Ikhtisar Stok Multi-Cabang
+              </p>
+              <h2 className="text-2xl font-bold text-white tracking-tight">
+                Total Stok Semua Cabang
+              </h2>
+              <p className="text-xs text-blue-200/80 mt-0.5">
+                Total persediaan dari {allBranches.length} lokasi cabang ({stokList.length} SKU barang)
+              </p>
+            </div>
+          </div>
+          <div className="text-left md:text-right bg-white/10 backdrop-blur-md px-6 py-3.5 rounded-xl border border-white/15">
+            <span className="text-xs text-blue-200 font-semibold block uppercase">Total Stok Sisa</span>
+            <span className="text-3xl font-extrabold text-white">
+              {totalStokSemuaCabang.toLocaleString('id-ID')} <span className="text-lg font-medium text-blue-200">Kg</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Small Cards: Total Stok Per Cabang */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-primary" />
+              <span>Rincian Total Stok Per Cabang (Klik untuk filter)</span>
+            </h3>
+            <span className="text-xs text-muted-foreground font-medium">
+              {allBranches.length} Cabang Terdaftar
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {allBranches.map((cabangName) => {
+              const dataCabang = stokPerCabang[cabangName] || { totalSisa: 0, itemCount: 0 }
+              const isFiltered = selectedCabangFilter === cabangName
+
+              return (
+                <button
+                  key={cabangName}
+                  onClick={() => setSelectedCabangFilter(selectedCabangFilter === cabangName ? 'Semua Cabang' : cabangName)}
+                  className={`p-3.5 rounded-xl border text-left transition-all relative overflow-hidden ${
+                    isFiltered
+                      ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-400/50'
+                      : 'bg-card hover:bg-muted/40 border-border text-foreground shadow-2xs hover:shadow-xs'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`text-xs font-bold truncate flex items-center gap-1 ${isFiltered ? 'text-white' : 'text-foreground'}`}>
+                      📍 {cabangName}
+                    </span>
+                    {dataCabang.itemCount > 0 && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                        isFiltered ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700 border border-blue-200'
+                      }`}>
+                        {dataCabang.itemCount} SKU
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className={`text-lg font-extrabold block tracking-tight ${isFiltered ? 'text-white' : 'text-primary'}`}>
+                      {dataCabang.totalSisa.toLocaleString('id-ID')} <span className={`text-xs font-semibold ${isFiltered ? 'text-blue-100' : 'text-muted-foreground'}`}>Kg</span>
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Inventory Table Card */}
@@ -615,7 +696,7 @@ export default function StokPage() {
                     -{totals.totalKeluar}
                   </td>
                   <td className="px-6 py-3.5 text-center text-primary text-base">
-                    {totals.totalSisa} Unit
+                    {totals.totalSisa} Kg
                   </td>
                   <td colSpan={2}></td>
                 </tr>
@@ -770,7 +851,7 @@ export default function StokPage() {
                 <div className="text-left sm:text-right bg-white sm:bg-transparent p-3 sm:p-0 rounded-lg border sm:border-none border-purple-200">
                   <span className="text-xs text-purple-600 font-bold uppercase tracking-wider block">Total Sisa Stok</span>
                   <span className="text-2xl font-black text-purple-900">
-                    {(selectedHistoryItem as any).sisaStok !== undefined ? (selectedHistoryItem as any).sisaStok : (selectedHistoryItem.stokAwal + selectedHistoryItem.barangMasuk - selectedHistoryItem.barangKeluar)} Unit
+                    {(selectedHistoryItem as any).sisaStok !== undefined ? (selectedHistoryItem as any).sisaStok : (selectedHistoryItem.stokAwal + selectedHistoryItem.barangMasuk - selectedHistoryItem.barangKeluar)} Kg
                   </span>
                 </div>
               </div>

@@ -366,10 +366,11 @@ export default function PermintaanPage() {
           >
             <option value="">Semua Status</option>
             <option value="pending">Pending</option>
-            <option value="quotation_sent">Quotation sent</option>
-            <option value="signing_mou">Signing MOU</option>
-            <option value="selesai">Selesai</option>
-            <option value="cancelled">Dibatalkan</option>
+            <option value="processed_by_sbb">Processed by SBB</option>
+            <option value="processed_by_pl">Processed by PL</option>
+            <option value="price_processed_by_sbd">Price processed by SBD</option>
+            <option value="rejected">Rejected</option>
+            <option value="quotation_sent">Quotation Sent</option>
           </select>
 
           {/* Date Filter */}
@@ -719,7 +720,7 @@ export default function PermintaanPage() {
                     </div>
                     <div className="text-right">
                       <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-200">
-                        {item.qty} Pcs
+                        {item.qty} Kg
                       </span>
                     </div>
                   </div>
@@ -804,10 +805,11 @@ export default function PermintaanPage() {
               className="w-full px-3 py-2 border border-border rounded-lg text-sm font-semibold focus:ring-2 focus:ring-primary"
             >
               <option value="pending">Pending</option>
-              <option value="quotation_sent">Quotation sent</option>
-              <option value="signing_mou">Signing MOU</option>
-              <option value="selesai">Selesai (Potong Stok Otomatis)</option>
-              <option value="cancelled">Dibatalkan</option>
+              <option value="processed_by_sbb">Processed by SBB</option>
+              <option value="processed_by_pl">Processed by PL</option>
+              <option value="price_processed_by_sbd">Price processed by SBD</option>
+              <option value="rejected">Rejected</option>
+              <option value="quotation_sent">Quotation Sent</option>
             </select>
 
             <div className="flex justify-end gap-3 pt-4">

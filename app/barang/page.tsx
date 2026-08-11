@@ -504,7 +504,7 @@ export default function BarangPage() {
                       <div className="flex justify-between items-center mb-3 border-b border-gray-200 pb-2">
                         <span className="font-bold text-gray-900 text-sm">{originalName}</span>
                         <span className="bg-primary/10 text-primary font-bold px-2.5 py-0.5 rounded-full text-xs">
-                          Total: {data.totalStok} Unit
+                          Total: {data.totalStok} Kg
                         </span>
                       </div>
                       
@@ -514,7 +514,7 @@ export default function BarangPage() {
                             <span className="font-medium text-gray-700">
                               📍 Cabang {bName}
                             </span>
-                            <span className="font-bold text-gray-900">{bStok} Unit</span>
+                            <span className="font-bold text-gray-900">{bStok} Kg</span>
                           </div>
                         ))}
                       </div>
@@ -614,7 +614,7 @@ export default function BarangPage() {
                     required
                     value={formData.satuan}
                     onChange={handleInputChange}
-                    placeholder="Mis: Pcs, Box, Rim"
+                    placeholder="Mis: Kg, Box, Ton"
                     className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary text-sm"
                   />
                 </div>

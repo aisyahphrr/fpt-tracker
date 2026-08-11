@@ -20,7 +20,7 @@ const BarangSchema = new mongoose.Schema(
     },
     satuan: {
       type: String,
-      required: [true, 'Satuan wajib diisi (contoh: Pcs, Rim)'],
+      required: [true, 'Satuan wajib diisi (contoh: Kg, Ton)'],
     },
     deskripsi: {
       type: String,
