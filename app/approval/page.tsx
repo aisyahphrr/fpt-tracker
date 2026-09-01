@@ -55,7 +55,7 @@ export default function ApprovalPage() {
   const [userRole, setUserRole] = useState<'pusat' | 'cabang'>('cabang')
 
   // Selected item to display on the Right Panel
-  const [selectedId, setSelectedId] = useState<string>('appr-1')
+  const [selectedId, setSelectedId] = useState<string | null>('appr-1')
 
   // Search & Filter
   const [searchBuyer, setSearchBuyer] = useState('')
@@ -113,7 +113,8 @@ export default function ApprovalPage() {
 
   // Active Selected Item
   const activeItem = useMemo(() => {
-    return data.find((d) => d.id === selectedId) || data[0] || null
+    if (!selectedId) return null
+    return data.find((d) => d.id === selectedId) || null
   }, [data, selectedId])
 
   // Filtered List for Left Table
@@ -371,8 +372,8 @@ export default function ApprovalPage() {
 
         {/* 2. SPLIT VIEW: LEFT TABLE & RIGHT EVALUATION PANEL */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* LEFT SIDE: DAFTAR PERMINTAAN (5 COLUMNS) */}
-          <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 space-y-3">
+          {/* LEFT SIDE: DAFTAR PERMINTAAN */}
+          <div className={`${activeItem ? 'lg:col-span-5' : 'lg:col-span-12'} bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 space-y-3 transition-all`}>
             {/* Filter Bar */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -517,9 +518,14 @@ export default function ApprovalPage() {
               {/* Header Info of Selected Request */}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-xs text-blue-600 font-semibold cursor-pointer">
-                    <span>← Kembali ke daftar</span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(null)}
+                    className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer transition-colors group"
+                  >
+                    <span className="group-hover:-translate-x-0.5 transition-transform">←</span>
+                    <span>Kembali ke daftar</span>
+                  </button>
                   <div className="flex items-center gap-2 mt-1">
                     <h2 className="text-base font-bold text-slate-800">{activeItem.buyer}</h2>
                     <span className="text-sm">{getFlag(activeItem.negara)}</span>
