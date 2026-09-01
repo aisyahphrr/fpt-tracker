@@ -756,50 +756,64 @@ export function StokCabang() {
         {/* VIEW TAB 2: STOK PER CABANG */}
         {activeTab === 'per_cabang' && (
           <div className="space-y-4">
-            {cabangOptions.filter((c) => c !== 'Semua Cabang').map((cab) => {
-              const cabRows = data.filter((d) => d.cabang === cab)
-              if (cabRows.length === 0) return null
-              const totalCabQty = cabRows.reduce((sum, r) => sum + r.qtyAvailable, 0)
+            {(() => {
+              const matchedCabangs = cabangOptions
+                .filter((c) => c !== 'Semua Cabang')
+                .filter((c) => selectedCabang === 'Semua Cabang' || c.toLowerCase().trim() === selectedCabang.toLowerCase().trim())
+                .filter((cab) => filteredRows.some((d) => d.cabang.toLowerCase().trim() === cab.toLowerCase().trim()))
 
-              return (
-                <div key={cab} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-                  <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-blue-600" />
-                      <h3 className="font-bold text-slate-800 text-sm">Cabang {cab}</h3>
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700">
-                        {cabRows.length} Komoditas
-                      </span>
-                    </div>
-                    <p className="text-xs font-bold text-slate-700">
-                      Total Stok Cabang: <span className="text-emerald-600 font-extrabold">{new Intl.NumberFormat('id-ID').format(totalCabQty)} kg</span>
-                    </p>
+              if (matchedCabangs.length === 0) {
+                return (
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400">
+                    Tidak ada data stok gudang untuk cabang/filter yang dipilih.
                   </div>
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-100 text-slate-400 font-bold text-[10px] uppercase">
-                        <th className="py-2.5 px-4">Komoditas</th>
-                        <th className="py-2.5 px-4">Spesifikasi / Size</th>
-                        <th className="py-2.5 px-4 text-right">Qty Available</th>
-                        <th className="py-2.5 px-4">Last Updated</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {cabRows.map((r) => (
-                        <tr key={r._id} className="hover:bg-blue-50/30">
-                          <td className="py-2.5 px-4 font-bold text-slate-800">{r.komoditas}</td>
-                          <td className="py-2.5 px-4 text-slate-600">{r.spesifikasi}</td>
-                          <td className="py-2.5 px-4 text-right font-extrabold text-slate-800">
-                            {new Intl.NumberFormat('id-ID').format(r.qtyAvailable)} kg
-                          </td>
-                          <td className="py-2.5 px-4 text-[11px] text-slate-500">{r.lastUpdated}</td>
+                )
+              }
+
+              return matchedCabangs.map((cab) => {
+                const cabRows = filteredRows.filter((d) => d.cabang.toLowerCase().trim() === cab.toLowerCase().trim())
+                const totalCabQty = cabRows.reduce((sum, r) => sum + r.qtyAvailable, 0)
+
+                return (
+                  <div key={cab} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                    <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-blue-600" />
+                        <h3 className="font-bold text-slate-800 text-sm">Cabang {cab}</h3>
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700">
+                          {cabRows.length} Komoditas
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-700">
+                        Total Stok Cabang: <span className="text-emerald-600 font-extrabold">{new Intl.NumberFormat('id-ID').format(totalCabQty)} kg</span>
+                      </p>
+                    </div>
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-slate-400 font-bold text-[10px] uppercase">
+                          <th className="py-2.5 px-4">Komoditas</th>
+                          <th className="py-2.5 px-4">Spesifikasi / Size</th>
+                          <th className="py-2.5 px-4 text-right">Qty Available</th>
+                          <th className="py-2.5 px-4">Last Updated</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )
-            })}
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {cabRows.map((r) => (
+                          <tr key={r._id} className="hover:bg-blue-50/30">
+                            <td className="py-2.5 px-4 font-bold text-slate-800">{r.komoditas}</td>
+                            <td className="py-2.5 px-4 text-slate-600">{r.spesifikasi}</td>
+                            <td className="py-2.5 px-4 text-right font-extrabold text-slate-800">
+                              {new Intl.NumberFormat('id-ID').format(r.qtyAvailable)} kg
+                            </td>
+                            <td className="py-2.5 px-4 text-[11px] text-slate-500">{r.lastUpdated}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              })
+            })()}
           </div>
         )}
 
@@ -823,33 +837,36 @@ export function StokCabang() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {komoditasOptions.filter((k) => k !== 'Semua Komoditas').map((kom, idx) => {
-                  const komRows = data.filter((d) => d.komoditas === kom)
-                  const totalKomQty = komRows.reduce((sum, r) => sum + r.qtyAvailable, 0)
-                  const branches = Array.from(new Set(komRows.map((r) => r.cabang))).join(', ')
-                  const percentage = totalQtyAvailable > 0 ? ((totalKomQty / totalQtyAvailable) * 100).toFixed(1) : '0'
+                {komoditasOptions
+                  .filter((k) => k !== 'Semua Komoditas')
+                  .filter((k) => filteredRows.some((d) => d.komoditas === k))
+                  .map((kom, idx) => {
+                    const komRows = filteredRows.filter((d) => d.komoditas === kom)
+                    const totalKomQty = komRows.reduce((sum, r) => sum + r.qtyAvailable, 0)
+                    const branches = Array.from(new Set(komRows.map((r) => r.cabang))).join(', ')
+                    const percentage = totalQtyAvailable > 0 ? ((totalKomQty / totalQtyAvailable) * 100).toFixed(1) : '0'
 
-                  return (
-                    <tr key={kom} className="hover:bg-blue-50/30">
-                      <td className="py-3 px-4 text-center text-slate-400 font-medium">{idx + 1}</td>
-                      <td className="py-3 px-4 font-bold text-slate-800">
-                        {kom}
-                        <span className="block text-[11px] text-slate-400 font-normal">Tersedia di: {branches || 'Semua Cabang'}</span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700">
-                          {komRows.length} Cabang
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right font-extrabold text-slate-800 text-sm">
-                        {new Intl.NumberFormat('id-ID').format(totalKomQty)} kg
-                      </td>
-                      <td className="py-3 px-4 text-center font-bold text-slate-600">
-                        {percentage}%
-                      </td>
-                    </tr>
-                  )
-                })}
+                    return (
+                      <tr key={kom} className="hover:bg-blue-50/30">
+                        <td className="py-3 px-4 text-center text-slate-400 font-medium">{idx + 1}</td>
+                        <td className="py-3 px-4 font-bold text-slate-800">
+                          {kom}
+                          <span className="block text-[11px] text-slate-400 font-normal">Tersedia di: {branches || 'Semua Cabang'}</span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700">
+                            {komRows.length} Cabang
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right font-extrabold text-slate-800 text-sm">
+                          {new Intl.NumberFormat('id-ID').format(totalKomQty)} kg
+                        </td>
+                        <td className="py-3 px-4 text-center font-bold text-slate-600">
+                          {percentage}%
+                        </td>
+                      </tr>
+                    )
+                  })}
               </tbody>
             </table>
           </div>
