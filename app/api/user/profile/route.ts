@@ -20,16 +20,12 @@ async function getUserIdFromToken() {
   }
 }
 
-function checkIsNailahOrAdmin(user: any) {
-  if (!user) return false;
-  const email = (user.email || '').toLowerCase().trim();
-  const name = (user.name || '').toLowerCase().trim();
-  return email.includes('nailah') || name.includes('nailah') || user.role === 'admin';
-}
-
 export async function GET() {
   try {
     await connectToDatabase();
+    
+    const cookieStore = await cookies();
+    const portalModeCookie = cookieStore.get('portal_mode')?.value;
     
     let userId = await getUserIdFromToken();
     let user = null;
@@ -39,51 +35,36 @@ export async function GET() {
     }
 
     if (!user) {
-      // Fallback: Cari user Nailah
-      user = await User.findOne({ $or: [{ email: /nailah/i }, { name: /nailah/i }] }).select('-password');
-      
+      // Fallback
+      user = await User.findOne({ email: 'nailah@gmail.com' }).select('-password');
       if (!user) {
-        const hashedPassword = await bcrypt.hash('admin123', 10);
+        const hashedPassword = await bcrypt.hash('123123', 10);
         user = await User.create({
           name: 'Nailah',
           email: 'nailah@gmail.com',
           password: hashedPassword,
           role: 'admin',
-          posisi: 'Admin Sales',
-          telepon: '',
-          alamat: '',
-          departemen: 'Sales & Inventory'
+          posisi: 'Admin Pusat',
+          telepon: '08123456789',
+          alamat: 'Jakarta',
+          departemen: 'Kantor Pusat'
         });
       }
     }
 
-    // Enforce role & posisi: Jika user Nailah / Admin -> Admin (Admin Sales), selain itu Staff (Staff Sales)
-    const isUserAdmin = checkIsNailahOrAdmin(user);
-    const correctRole = isUserAdmin ? 'admin' : 'staff';
-    const correctPosisi = isUserAdmin ? (user.posisi || 'Admin Sales') : 'Staff Sales';
+    const email = (user.email || '').toLowerCase().trim();
+    const isPusat = user.role === 'admin' || user.role === 'staff' || email.includes('nailah') || email.includes('ahlan') || email.includes('utamihartati') || email.includes('agusfriyanto') || email.includes('nailahcinthari') || email.includes('robertto') || email.includes('yodiadri');
+    const isDireksi = user.role === 'direksi' || email.includes('aisyah') || email.includes('titikmustikasari') || email.includes('errintopardede');
 
-    let updateNeeded = false;
-    const updateObj: any = {};
+    let effectiveRole = user.role;
+    if (isPusat) effectiveRole = user.role || 'admin';
+    else if (isDireksi) effectiveRole = 'direksi';
+    else effectiveRole = 'cabang';
 
-    if (user.role !== correctRole) {
-      updateObj.role = correctRole;
-      user.role = correctRole;
-      updateNeeded = true;
-    }
-
-    if (user.posisi !== correctPosisi) {
-      updateObj.posisi = correctPosisi;
-      user.posisi = correctPosisi;
-      updateNeeded = true;
-    }
-
-    if (updateNeeded) {
-      await User.findByIdAndUpdate(user._id, updateObj);
-    }
-
-    const userObj = user.toObject ? user.toObject() : user;
-    userObj.role = correctRole;
-    userObj.posisi = correctPosisi;
+    const userObj: any = user.toObject ? user.toObject() : { ...user };
+    userObj.role = effectiveRole;
+    userObj.canSwitchPortal = isPusat;
+    userObj.portalMode = isPusat ? (portalModeCookie || 'pusat') : 'cabang';
 
     return NextResponse.json(userObj, { status: 200 });
   } catch (error: any) {
@@ -113,25 +94,21 @@ export async function PUT(req: Request) {
       return NextResponse.json({ message: 'User tidak ditemukan' }, { status: 404 });
     }
 
-    const isUserAdmin = checkIsNailahOrAdmin({ email: email || user.email, name: name || user.name, role: user.role });
-    const correctRole = isUserAdmin ? 'admin' : 'staff';
-    let targetPosisi = isUserAdmin ? (posisi || user.posisi || 'Admin Sales') : 'Staff Sales';
-
-    const updateData: any = { role: correctRole, posisi: targetPosisi };
+    const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
     if (telepon !== undefined) updateData.telepon = telepon;
     if (alamat !== undefined) updateData.alamat = alamat;
+    if (posisi !== undefined) updateData.posisi = posisi;
     if (departemen !== undefined) updateData.departemen = departemen;
 
-    const updatedUser = await User.findByIdAndUpdate(
+    const updatedUser: any = await User.findByIdAndUpdate(
       user._id,
       { $set: updateData },
       { new: true, runValidators: true }
     ).select('-password');
 
-    const resultObj = updatedUser.toObject ? updatedUser.toObject() : updatedUser;
-    resultObj.role = correctRole;
+    const resultObj = updatedUser?.toObject ? updatedUser.toObject() : updatedUser;
 
     return NextResponse.json({ message: 'Profil berhasil diperbarui', user: resultObj }, { status: 200 });
   } catch (error: any) {

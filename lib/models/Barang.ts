@@ -43,9 +43,14 @@ const BarangSchema = new mongoose.Schema(
       enum: ['aktif', 'nonaktif'],
       default: 'aktif',
     },
+    lastUpdated: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,
+    strict: false,
   }
 );
 

@@ -19,3 +19,6 @@ node_modules
 # Uploaded local files
 public/uploads/*
 !public/uploads/.gitkeep
+
+# Scratch files
+scratch/

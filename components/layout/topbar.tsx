@@ -23,6 +23,16 @@ export function Topbar({ userName = 'Admin User', userRole = 'admin' }: TopbarPr
     window.location.href = '/login'
   }
 
+  const formatRole = (role: string, name: string) => {
+    const r = (role || '').toLowerCase()
+    const n = (name || '').toLowerCase()
+    if (r === 'admin' || n.includes('nailah')) return 'Admin Pusat'
+    if (n.includes('ahlan')) return 'Staff Pusat'
+    if (r === 'direksi' || n.includes('aisyah')) return 'Direksi Cabang'
+    if (r === 'cabang' || n.includes('cabang')) return 'Staff Cabang'
+    return role
+  }
+
   return (
     <header className="topbar-container h-16 px-6 py-3">
       <div className="flex items-center justify-between h-full">
@@ -53,7 +63,7 @@ export function Topbar({ userName = 'Admin User', userRole = 'admin' }: TopbarPr
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-foreground">{userName}</p>
-                <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
+                <p className="text-xs text-muted-foreground">{formatRole(userRole, userName)}</p>
               </div>
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -62,7 +72,7 @@ export function Topbar({ userName = 'Admin User', userRole = 'admin' }: TopbarPr
               <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50">
                 <div className="p-3 border-b border-border">
                   <p className="text-sm font-medium text-foreground">{userName}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
+                  <p className="text-xs text-muted-foreground">{formatRole(userRole, userName)}</p>
                 </div>
                 <div className="divide-y divide-border">
                   <a href="/profil" className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-gray-50 transition-colors flex items-center gap-2">

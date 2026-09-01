@@ -23,6 +23,10 @@ const RequestItemSchema = new mongoose.Schema({
     required: true,
     min: 1
   },
+  harga: {
+    type: Number,
+    default: 0
+  },
   catatan: {
     type: String,
     default: ''
@@ -67,8 +71,16 @@ const PermintaanSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'processed_by_sbb', 'processed_by_pl', 'price_processed_by_sbd', 'rejected', 'quotation_sent'],
       default: 'pending'
+    },
+    statusStok: {
+      type: String,
+      enum: ['Stock', 'Non-Stock'],
+      default: 'Stock'
+    },
+    lastUpdated: {
+      type: String,
+      default: ''
     },
     catatan: {
       type: String,

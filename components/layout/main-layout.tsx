@@ -17,9 +17,9 @@ export function MainLayout({
   userName: initialName,
   userEmail: initialEmail,
 }: MainLayoutProps) {
-  const [userName, setUserName] = useState(initialName && initialName !== 'Budi Santoso' ? initialName : 'Nailah')
-  const [userRole, setUserRole] = useState(initialRole || 'admin')
-  const [userEmail, setUserEmail] = useState(initialEmail && !initialEmail.includes('budi') ? initialEmail : 'nailah@gmail.com')
+  const [userName, setUserName] = useState(initialName || '')
+  const [userRole, setUserRole] = useState(initialRole || '')
+  const [userEmail, setUserEmail] = useState(initialEmail || '')
 
   useEffect(() => {
     async function fetchProfile() {

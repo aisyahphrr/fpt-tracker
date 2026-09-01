@@ -5,25 +5,22 @@ const UserSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, 'Please provide a name'],
-      maxlength: [60, 'Name cannot be more than 60 characters'],
+      maxlength: [100, 'Name cannot be more than 100 characters'],
     },
     email: {
       type: String,
       required: [true, 'Please provide an email'],
       unique: true,
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        'Please fill a valid email address',
-      ],
+      lowercase: true,
+      trim: true,
     },
     password: {
       type: String,
       required: [true, 'Please provide a password'],
-      minlength: [6, 'Password should be at least 6 characters'],
     },
     role: {
       type: String,
-      enum: ['admin', 'staff'],
+      enum: ['admin', 'staff', 'direksi', 'cabang'],
       default: 'staff',
     },
     telepon: {
@@ -36,16 +33,22 @@ const UserSchema = new mongoose.Schema(
     },
     posisi: {
       type: String,
-      default: 'Admin Sales',
+      default: 'Staff',
     },
     departemen: {
       type: String,
-      default: 'Sales & Inventory',
+      default: 'Operasional',
     },
   },
   {
     timestamps: true,
+    strict: false,
   }
 );
 
-export default mongoose.models.User || mongoose.model('User', UserSchema);
+// Prevent caching issues in Next.js development
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
+export default mongoose.model('User', UserSchema);
