@@ -458,15 +458,24 @@ export function PermintaanCabang() {
     )
     const autoStatusStok: 'Stock' | 'Non-Stock' = inBarang || inBahanBaku ? 'Stock' : 'Non-Stock'
 
-    const now = new Date()
-    const day = String(now.getDate()).padStart(2, '0')
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const year = now.getFullYear()
-    const formattedDate = `${day}/${month}/${year}`
+    let formattedDate = ''
+    if (formData.tanggal) {
+      const parts = formData.tanggal.split('-')
+      if (parts.length === 3) {
+        formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`
+      } else {
+        formattedDate = formData.tanggal
+      }
+    } else {
+      const now = new Date()
+      formattedDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
+    }
+
+    const currentYear = new Date().getFullYear()
 
     const newRow: PermintaanRow = {
       _id: `inq-${Date.now()}`,
-      noRequest: `INQ-${year}-${String(data.length + 1).padStart(3, '0')}`,
+      noRequest: `INQ-${currentYear}-${String(data.length + 1).padStart(3, '0')}`,
       tanggal: formattedDate,
       buyer: formData.buyer,
       negara: formData.negara,
@@ -1004,6 +1013,19 @@ export function PermintaanCabang() {
               <form onSubmit={handleSavePermintaan} className="space-y-3 text-xs">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Tanggal Permintaan * <span className="text-blue-600 font-normal">(Pilih dari kalender)</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.tanggal}
+                      onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer"
+                    />
+                  </div>
+
+                  <div>
                     <label className="block font-bold text-slate-700 mb-1">Nama Buyer *</label>
                     <input
                       type="text"
@@ -1014,7 +1036,9 @@ export function PermintaanCabang() {
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+                </div>
 
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Negara / Tujuan *</label>
                     <input
@@ -1026,9 +1050,7 @@ export function PermintaanCabang() {
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Komoditas / Ikan *</label>
                     <input
@@ -1040,7 +1062,9 @@ export function PermintaanCabang() {
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+                </div>
 
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Kuantitas (kg) *</label>
                     <input
@@ -1053,6 +1077,19 @@ export function PermintaanCabang() {
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Harga Buyer (IDR) <span className="font-normal text-slate-400">(Opsional)</span>
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Contoh: 405000000"
+                      value={formData.hargaBuyer}
+                      onChange={(e) => setFormData({ ...formData, hargaBuyer: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -1062,19 +1099,6 @@ export function PermintaanCabang() {
                     placeholder="Contoh: 2 kg up, FOB, Grade A"
                     value={formData.spesifikasi}
                     onChange={(e) => setFormData({ ...formData, spesifikasi: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Harga Buyer (IDR) <span className="font-normal text-slate-400">(Opsional - kosongkan jika Not Available)</span>
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="Contoh: 405000000"
-                    value={formData.hargaBuyer}
-                    onChange={(e) => setFormData({ ...formData, hargaBuyer: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
