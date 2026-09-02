@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { DAFTAR_CABANG } from '@/lib/constants/cabang'
 import {
   Users,
   Search,
@@ -98,9 +99,8 @@ export default function SupplierPage() {
   }, [data])
 
   const lokasiOptions = useMemo(() => {
-    const set = new Set(data.map((d) => d.lokasi).filter(Boolean))
-    return ['Semua Lokasi', ...Array.from(set)]
-  }, [data])
+    return ['Semua Lokasi', ...DAFTAR_CABANG]
+  }, [])
 
   // Filtered Rows
   const filteredRows = useMemo(() => {
@@ -108,7 +108,7 @@ export default function SupplierPage() {
       if (selectedKomoditas !== 'Semua Komoditas' && row.komoditas !== selectedKomoditas) {
         return false
       }
-      if (selectedLokasi !== 'Semua Lokasi' && row.lokasi !== selectedLokasi) {
+      if (selectedLokasi !== 'Semua Lokasi' && !row.lokasi.toLowerCase().includes(selectedLokasi.toLowerCase())) {
         return false
       }
       if (searchQuery) {
@@ -138,7 +138,7 @@ export default function SupplierPage() {
     setEditingId(null)
     setFormData({
       nama: '',
-      lokasi: 'Bitung, Sulawesi Utara',
+      lokasi: 'Jakarta',
       komoditas: 'Yellowfin Tuna',
       spesifikasi: '',
       picKontak: '',
@@ -269,7 +269,7 @@ export default function SupplierPage() {
             className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-all self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Tambah Supplier</span>
+            <span>Tambah Supplier</span>
           </button>
         </div>
 
@@ -555,24 +555,7 @@ export default function SupplierPage() {
                       onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
                     >
-                      {[
-                        'Bitung, Sulawesi Utara',
-                        'Manado, Sulawesi Utara',
-                        'Tegal, Jawa Tengah',
-                        'Ambon, Maluku',
-                        'Ternate, Maluku Utara',
-                        'Sorong, Papua Barat',
-                        'Rembang, Jawa Tengah',
-                        'Makassar, Sulawesi Selatan',
-                        'Kendari, Sulawesi Tenggara',
-                        'Bau-Bau, Sulawesi Tenggara',
-                        'Belawan, Sumatera Utara',
-                        'Jakarta (Kamal)',
-                        'Bali',
-                        'Surabaya, Jawa Timur',
-                        'Banyuwangi, Jawa Timur',
-                        'Kupang, NTT',
-                      ].map((l) => (
+                      {DAFTAR_CABANG.map((l) => (
                         <option key={l} value={l}>{l}</option>
                       ))}
                     </select>

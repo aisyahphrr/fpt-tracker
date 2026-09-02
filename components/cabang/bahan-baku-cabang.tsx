@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { DAFTAR_CABANG } from '@/lib/constants/cabang'
 import {
   Plus,
   Search,
@@ -32,7 +33,8 @@ interface SumberItem {
   spesifikasi?: string
   hargaBahanBaku?: number
   hargaProses?: number
-  harga?: number // Harga Akhir per Kg
+  hargaLogistik?: number
+  harga?: number // Harga Akhir per Kg = BB + Proses + Logistik
   lampiran?: string
   catatan?: string
   lastUpdated?: string
@@ -84,12 +86,13 @@ export function BahanBakuCabang() {
 
   // Form State for Tambah Sumber
   const [formSumber, setFormSumber] = useState({
-    cabang: 'Manado',
+    cabang: 'Jakarta',
     qty: '',
     supplier: '',
     spesifikasi: '',
     hargaBahanBaku: '',
     hargaProses: '',
+    hargaLogistik: '',
     catatan: '',
     lampiranName: '',
   })
@@ -278,12 +281,13 @@ export function BahanBakuCabang() {
     setSelectedBahanBaku(row)
     setShowSuccessAdded(false)
     setFormSumber({
-      cabang: 'Manado',
+      cabang: 'Jakarta',
       qty: '',
       supplier: '',
       spesifikasi: '',
       hargaBahanBaku: '',
       hargaProses: '',
+      hargaLogistik: '',
       catatan: '',
       lampiranName: '',
     })
@@ -297,12 +301,13 @@ export function BahanBakuCabang() {
     setIsDetailSumberModalOpen(true)
   }
 
-  // Calculate Harga Akhir live on Form input
+  // Calculate Harga Akhir live on Form input: BB + Proses + Logistik
   const liveHargaAkhir = useMemo(() => {
     const hb = parseFloat(formSumber.hargaBahanBaku) || 0
     const hp = parseFloat(formSumber.hargaProses) || 0
-    return hb + hp
-  }, [formSumber.hargaBahanBaku, formSumber.hargaProses])
+    const hl = parseFloat(formSumber.hargaLogistik) || 0
+    return hb + hp + hl
+  }, [formSumber.hargaBahanBaku, formSumber.hargaProses, formSumber.hargaLogistik])
 
   // Submit Tambah Sumber
   const handleSubmitSumber = async (e: React.FormEvent) => {
@@ -324,6 +329,7 @@ export function BahanBakuCabang() {
       spesifikasi: formSumber.spesifikasi || 'Grade A',
       hargaBahanBaku: formSumber.hargaBahanBaku ? Number(formSumber.hargaBahanBaku) : undefined,
       hargaProses: formSumber.hargaProses ? Number(formSumber.hargaProses) : undefined,
+      hargaLogistik: formSumber.hargaLogistik ? Number(formSumber.hargaLogistik) : undefined,
       harga: liveHargaAkhir > 0 ? liveHargaAkhir : undefined,
       catatan: formSumber.catatan,
       lampiran: formSumber.lampiranName,
@@ -650,7 +656,7 @@ export function BahanBakuCabang() {
                   <th className="py-3 px-3 text-right">Harga Rata-rata (Harga Akhir)</th>
                   <th className="py-3 px-3 text-center">Status</th>
                   <th className="py-3 px-3">Last Updated</th>
-                  <th className="py-3 px-3 text-center w-16">+</th>
+                  <th className="py-3 px-3 text-center w-16">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -806,11 +812,9 @@ export function BahanBakuCabang() {
                           onChange={(e) => setFormSumber({ ...formSumber, cabang: e.target.value })}
                           className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
                         >
-                          {['Manado', 'Bitung', 'Ternate', 'Ambon', 'Makassar', 'Kendari', 'Bau-Bau', 'Jakarta', 'Bali', 'Banyuwangi', 'Surabaya', 'Sorong'].map(
-                            (c) => (
-                              <option key={c} value={c}>{c}</option>
-                            )
-                          )}
+                          {DAFTAR_CABANG.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
                         </select>
                       </div>
 
@@ -858,43 +862,62 @@ export function BahanBakuCabang() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Harga Bahan Baku <span className="font-normal text-slate-400">(IDR/kg)</span>
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="Rp / kg"
-                          value={formSumber.hargaBahanBaku}
-                          onChange={(e) => setFormSumber({ ...formSumber, hargaBahanBaku: e.target.value })}
-                          className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
+                    {/* 4 KOLOM HARGA: Bahan Baku + Proses + Logistik = Harga Akhir */}
+                    <div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            Harga Bahan Baku <span className="font-normal text-slate-400">(IDR/kg)</span>
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="Rp / kg"
+                            value={formSumber.hargaBahanBaku}
+                            onChange={(e) => setFormSumber({ ...formSumber, hargaBahanBaku: e.target.value })}
+                            className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                          />
+                        </div>
 
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Harga Proses <span className="font-normal text-slate-400">(IDR/kg)</span>
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="Rp / kg"
-                          value={formSumber.hargaProses}
-                          onChange={(e) => setFormSumber({ ...formSumber, hargaProses: e.target.value })}
-                          className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            Harga Proses <span className="font-normal text-slate-400">(IDR/kg)</span>
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="Rp / kg"
+                            value={formSumber.hargaProses}
+                            onChange={(e) => setFormSumber({ ...formSumber, hargaProses: e.target.value })}
+                            className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                          />
+                        </div>
 
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Harga Akhir <span className="font-normal text-slate-400">(IDR/kg)</span>
-                        </label>
-                        <div className="w-full px-2.5 py-2 bg-blue-50 border border-blue-200 rounded-xl font-bold text-blue-700 truncate">
-                          {liveHargaAkhir > 0
-                            ? `Rp ${new Intl.NumberFormat('id-ID').format(liveHargaAkhir)}`
-                            : 'Otomatis terhitung'}
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            Harga Logistik <span className="font-normal text-slate-400">(IDR/kg)</span>
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="Rp / kg"
+                            value={formSumber.hargaLogistik}
+                            onChange={(e) => setFormSumber({ ...formSumber, hargaLogistik: e.target.value })}
+                            className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            Harga Akhir <span className="font-normal text-slate-400">(IDR/kg)</span>
+                          </label>
+                          <div className="w-full px-2.5 py-2 bg-blue-50 border border-blue-200 rounded-xl font-extrabold text-blue-700 truncate flex items-center h-[38px] text-xs">
+                            {liveHargaAkhir > 0
+                              ? `Rp ${new Intl.NumberFormat('id-ID').format(liveHargaAkhir)}`
+                              : 'Otomatis terhitung'}
+                          </div>
                         </div>
                       </div>
+                      <p className="text-[11px] text-slate-500 mt-1.5 italic">
+                        💡 Rumus: Harga Akhir = Harga Bahan Baku + Harga Proses + Harga Logistik
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -1072,7 +1095,7 @@ export function BahanBakuCabang() {
                   className="px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>+ Tambah Sumber</span>
+                  <span>Tambah Sumber</span>
                 </button>
               </div>
 
@@ -1157,7 +1180,7 @@ export function BahanBakuCabang() {
                   <span className="font-bold text-slate-800">{detailModalMetrics.statusObj.label}</span>
                 </div>
                 <p className="text-[10px] text-slate-400 italic pt-1">
-                  💡 Harga Akhir = Harga Bahan Baku + Harga Proses
+                  💡 Rumus: Harga Akhir = Harga Bahan Baku + Harga Proses + Harga Logistik
                 </p>
               </div>
 

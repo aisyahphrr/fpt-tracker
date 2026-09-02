@@ -247,7 +247,7 @@ export async function POST(req: Request) {
       lastUpdated: nowStr
     });
 
-    // Otomatis buat referensi Bahan Baku
+    // Otomatis buat referensi Bahan Baku dengan sumber kosong (0 Sumber / Belum Ada Sumber)
     for (const item of sanitizedItems) {
       await BahanBaku.create({
         noRequest,
@@ -255,8 +255,8 @@ export async function POST(req: Request) {
         negara: negara || '',
         komoditas: item.name,
         qtyPermintaan: item.qty || 1,
-        hargaBuyer: item.harga || 0,
-        sumber: item.spesifikasi || item.size ? [{ cabang: 'Pusat', supplier: 'Utama', qty: item.qty || 1, harga: item.harga || 0, size: item.size || '', spesifikasi: item.spesifikasi || '' }] : [],
+        hargaBuyer: item.hargaBuyerPerKg || (Number(item.qty) > 0 && Number(item.harga) > 100000 ? Math.round(Number(item.harga) / Number(item.qty)) : Number(item.harga)) || 0,
+        sumber: [], // Baru masuk dari Permintaan Buyer, belum ada sumber bahan baku
         lastUpdated: nowStr,
       });
     }

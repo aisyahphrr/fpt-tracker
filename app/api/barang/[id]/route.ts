@@ -15,7 +15,8 @@ async function isAdminUser() {
     const { payload } = await jwtVerify(token, secret);
     const email = ((payload?.email as string) || '').toLowerCase();
     const name = ((payload?.name as string) || '').toLowerCase();
-    return email.includes('nailah') || name.includes('nailah') || payload?.role === 'admin';
+    const role = ((payload?.role as string) || '').toLowerCase();
+    return email.includes('nailah') || name.includes('nailah') || role === 'admin' || role === 'direksi' || role === 'cabang';
   } catch (e) {
     return false;
   }
@@ -26,7 +27,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     const isAdmin = await isAdminUser();
     if (!isAdmin) {
       return NextResponse.json(
-        { message: 'Akses ditolak. Hanya Admin Sales (Nailah) yang memiliki izin untuk memperbarui barang atau stok.' },
+        { message: 'Akses ditolak. Anda tidak memiliki izin untuk memperbarui barang atau stok.' },
         { status: 403 }
       );
     }
@@ -35,7 +36,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     const body = await req.json();
     
     // Extract fields
-    const { nama, cabang, kategori, satuan, deskripsi, status, tambahanMasuk, tanggal } = body;
+    const { nama, cabang, kategori, satuan, deskripsi, status, tambahanMasuk, tanggal, stokAwal, lastUpdated } = body;
 
     await connectToDatabase();
 
@@ -57,7 +58,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
         tanggal: tanggalMutasi
       });
     } else {
-      // Jika update dari halaman Master Barang (tanpa stok)
+      // Jika update langsung dari form edit stok
       updateQuery = {};
       if (nama !== undefined) updateQuery.nama = nama;
       if (cabang !== undefined) updateQuery.cabang = cabang;
@@ -65,6 +66,8 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
       if (satuan !== undefined) updateQuery.satuan = satuan;
       if (deskripsi !== undefined) updateQuery.deskripsi = deskripsi;
       if (status !== undefined) updateQuery.status = status;
+      if (stokAwal !== undefined) updateQuery.stokAwal = Number(stokAwal);
+      if (lastUpdated !== undefined) updateQuery.lastUpdated = lastUpdated;
     }
 
     const updatedBarang = await Barang.findByIdAndUpdate(

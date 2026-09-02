@@ -28,7 +28,7 @@ export function Topbar({ userName = 'Admin User', userRole = 'admin' }: TopbarPr
     const n = (name || '').toLowerCase()
     if (r === 'admin' || n.includes('nailah')) return 'Admin Pusat'
     if (n.includes('ahlan')) return 'Staff Pusat'
-    if (r === 'direksi' || n.includes('aisyah')) return 'Direksi Cabang'
+    if (r === 'direksi' || n.includes('aisyah') || n.includes('titik') || n.includes('errin')) return 'Direksi'
     if (r === 'cabang' || n.includes('cabang')) return 'Staff Cabang'
     return role
   }

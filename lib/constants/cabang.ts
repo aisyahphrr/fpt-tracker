@@ -1,0 +1,26 @@
+export const DAFTAR_CABANG = [
+  'Kantor Pusat',
+  'Jakarta',
+  'Ambon',
+  'Bacan',
+  'Bitung',
+  'Makassar',
+  'Pekalongan',
+  'Sorong',
+  'Brondong',
+  'Pemangkat',
+  'Benoa',
+  'Belawan',
+  'Surabaya',
+  'Pati',
+  'Tegal',
+  'Rembang',
+  'Prigi',
+  'Mayangan',
+  'Tanjung Pandan',
+  'Lampulo',
+  'Semeleu',
+  'Bengkayang',
+] as const
+
+export type CabangType = (typeof DAFTAR_CABANG)[number]

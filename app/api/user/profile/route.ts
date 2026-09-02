@@ -66,6 +66,14 @@ export async function GET() {
     userObj.canSwitchPortal = isPusat;
     userObj.portalMode = isPusat ? (portalModeCookie || 'pusat') : 'cabang';
 
+    if (isDireksi) {
+      userObj.posisi = 'Direksi';
+    } else if (effectiveRole === 'cabang' && (!userObj.posisi || userObj.posisi === 'Staff')) {
+      userObj.posisi = 'Staff Cabang';
+    } else if (isPusat && (!userObj.posisi || userObj.posisi === 'Admin' || userObj.posisi === 'Staff')) {
+      userObj.posisi = effectiveRole === 'admin' ? 'Admin Pusat' : 'Staff Pusat';
+    }
+
     return NextResponse.json(userObj, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching profile:', error);

@@ -9,7 +9,8 @@ const SumberSchema = new mongoose.Schema({
   size: { type: String, default: '' },
   hargaBahanBaku: { type: Number, default: 0 },
   hargaProses: { type: Number, default: 0 },
-  harga: { type: Number, default: 0 }, // Harga Akhir per Kg
+  hargaLogistik: { type: Number, default: 0 },
+  harga: { type: Number, default: 0 }, // Harga Akhir per Kg = BB + Proses + Logistik
   lampiran: { type: String, default: '' },
   catatan: { type: String, default: '' },
   lastUpdated: { type: String, default: '' },

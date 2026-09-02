@@ -18,12 +18,12 @@ const INITIAL_BAHAN_BAKU = [
     lastUpdated: '30/08/2026 14:30 WIB by Nailah (Admin)',
     sumber: [
       { cabang: 'Bitung', supplier: 'CV Samudra Mandiri', qty: 3000, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 60000, hargaProses: 7500, harga: 67500, lastUpdated: '30/08/2026 09:10 WIB by Tami (Sales)' },
-      { cabang: 'Manado', supplier: 'PT Laut Nusantara', qty: 2000, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 62000, hargaProses: 8000, harga: 70000, lastUpdated: '30/08/2026 09:00 WIB by Tami (Sales)' },
-      { cabang: 'Ternate', supplier: 'PT Samudra Pasifik', qty: 1500, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 64000, hargaProses: 8000, harga: 72000, lastUpdated: '29/08/2026 16:40 WIB by Nailah (Admin)' },
+      { cabang: 'Jakarta', supplier: 'PT Laut Nusantara', qty: 2000, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 62000, hargaProses: 8000, harga: 70000, lastUpdated: '30/08/2026 09:00 WIB by Tami (Sales)' },
+      { cabang: 'Bacan', supplier: 'PT Samudra Pasifik', qty: 1500, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 64000, hargaProses: 8000, harga: 72000, lastUpdated: '29/08/2026 16:40 WIB by Nailah (Admin)' },
       { cabang: 'Ambon', supplier: 'PT Maluku Sejahtera', qty: 1500, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 60000, hargaProses: 8000, harga: 68000, lastUpdated: '29/08/2026 16:35 WIB by Nailah (Admin)' },
       { cabang: 'Makassar', supplier: 'CV Bahari Makassar', qty: 1800, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 62000, hargaProses: 7500, harga: 69500, lastUpdated: '29/08/2026 14:20 WIB by Rian (Cab. Bitung)' },
-      { cabang: 'Kendari', supplier: 'PT Lautan Sultra', qty: 1200, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 60000, hargaProses: 7000, harga: 67000, lastUpdated: '29/08/2026 11:00 WIB by Rian (Cab. Bitung)' },
-      { cabang: 'Bau-Bau', supplier: 'CV Samudra Buton', qty: 1500, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 64000, hargaProses: 8000, harga: 72000, lastUpdated: '29/08/2026 10:30 WIB by Rian (Cab. Bitung)' }
+      { cabang: 'Pekalongan', supplier: 'PT Lautan Sultra', qty: 1200, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 60000, hargaProses: 7000, harga: 67000, lastUpdated: '29/08/2026 11:00 WIB by Rian (Cab. Bitung)' },
+      { cabang: 'Pemangkat', supplier: 'CV Samudra Buton', qty: 1500, spesifikasi: 'Size: 2-4 pcs/kg, Grade A', hargaBahanBaku: 64000, hargaProses: 8000, harga: 72000, lastUpdated: '29/08/2026 10:30 WIB by Rian (Cab. Bitung)' }
     ]
   },
   {
@@ -38,7 +38,7 @@ const INITIAL_BAHAN_BAKU = [
       { cabang: 'Bitung', supplier: 'PT Indo Tuna Mandiri', qty: 4000, spesifikasi: '10 kg up, Mix grade', hargaBahanBaku: 64000, hargaProses: 8000, harga: 72000, lastUpdated: '30/08/2026 08:30 WIB' },
       { cabang: 'Ambon', supplier: 'CV Maluku Bahari', qty: 3500, spesifikasi: '10 kg up, Mix grade', hargaBahanBaku: 65500, hargaProses: 8000, harga: 73500, lastUpdated: '29/08/2026 15:00 WIB' },
       { cabang: 'Sorong', supplier: 'PT Papua Seafood', qty: 3500, spesifikasi: '10 kg up, Mix grade', hargaBahanBaku: 64000, hargaProses: 8000, harga: 72000, lastUpdated: '29/08/2026 14:15 WIB' },
-      { cabang: 'Bali', supplier: 'CV Dewata Ocean', qty: 3500, spesifikasi: '10 kg up, Mix grade', hargaBahanBaku: 65000, hargaProses: 8000, harga: 73000, lastUpdated: '29/08/2026 11:30 WIB' },
+      { cabang: 'Benoa', supplier: 'CV Dewata Ocean', qty: 3500, spesifikasi: '10 kg up, Mix grade', hargaBahanBaku: 65000, hargaProses: 8000, harga: 73000, lastUpdated: '29/08/2026 11:30 WIB' },
       { cabang: 'Surabaya', supplier: 'PT Samudra Jaya', qty: 3500, spesifikasi: '10 kg up, Mix grade', hargaBahanBaku: 64000, hargaProses: 8000, harga: 72000, lastUpdated: '29/08/2026 10:00 WIB' }
     ]
   },
@@ -51,9 +51,9 @@ const INITIAL_BAHAN_BAKU = [
     hargaBuyer: 60000,
     lastUpdated: '29/08/2026 16:30 WIB by Nailah (Admin)',
     sumber: [
-      { cabang: 'Banyuwangi', supplier: 'PT Vaname Prima', qty: 4000, spesifikasi: 'PD 31/40, IQF', hargaBahanBaku: 50000, hargaProses: 8000, harga: 58000, lastUpdated: '29/08/2026 14:00 WIB' },
-      { cabang: 'Lampung', supplier: 'CV Shrimp Indo', qty: 2500, spesifikasi: 'PD 31/40, IQF', hargaBahanBaku: 51000, hargaProses: 8000, harga: 59000, lastUpdated: '29/08/2026 11:00 WIB' },
-      { cabang: 'Situbondo', supplier: 'PT Tambak Nusantara', qty: 1000, spesifikasi: 'PD 31/40, IQF', hargaBahanBaku: 52000, hargaProses: 8000, harga: 60000, lastUpdated: '29/08/2026 09:30 WIB' }
+      { cabang: 'Brondong', supplier: 'PT Vaname Prima', qty: 4000, spesifikasi: 'PD 31/40, IQF', hargaBahanBaku: 50000, hargaProses: 8000, harga: 58000, lastUpdated: '29/08/2026 14:00 WIB' },
+      { cabang: 'Lampulo', supplier: 'CV Shrimp Indo', qty: 2500, spesifikasi: 'PD 31/40, IQF', hargaBahanBaku: 51000, hargaProses: 8000, harga: 59000, lastUpdated: '29/08/2026 11:00 WIB' },
+      { cabang: 'Prigi', supplier: 'PT Tambak Nusantara', qty: 1000, spesifikasi: 'PD 31/40, IQF', hargaBahanBaku: 52000, hargaProses: 8000, harga: 60000, lastUpdated: '29/08/2026 09:30 WIB' }
     ]
   },
   {
@@ -66,9 +66,9 @@ const INITIAL_BAHAN_BAKU = [
     lastUpdated: '29/08/2026 11:20 WIB by Nailah (Admin)',
     sumber: [
       { cabang: 'Makassar', supplier: 'PT Gurita Bahari', qty: 1000, spesifikasi: '1-2 kg/pc, Frozen', hargaBahanBaku: 40000, hargaProses: 8000, harga: 48000, lastUpdated: '29/08/2026 10:00 WIB' },
-      { cabang: 'Kendari', supplier: 'CV Sultra Marine', qty: 1000, spesifikasi: '1-2 kg/pc, Frozen', hargaBahanBaku: 39000, hargaProses: 8000, harga: 47000, lastUpdated: '29/08/2026 09:30 WIB' },
-      { cabang: 'Kupang', supplier: 'PT NTT Seafood', qty: 1000, spesifikasi: '1-2 kg/pc, Frozen', hargaBahanBaku: 41000, hargaProses: 8000, harga: 49000, lastUpdated: '28/08/2026 16:00 WIB' },
-      { cabang: 'Bali', supplier: 'CV Octopus Dewata', qty: 1000, spesifikasi: '1-2 kg/pc, Frozen', hargaBahanBaku: 40500, hargaProses: 8000, harga: 48500, lastUpdated: '28/08/2026 14:00 WIB' }
+      { cabang: 'Pekalongan', supplier: 'CV Sultra Marine', qty: 1000, spesifikasi: '1-2 kg/pc, Frozen', hargaBahanBaku: 39000, hargaProses: 8000, harga: 47000, lastUpdated: '29/08/2026 09:30 WIB' },
+      { cabang: 'Semeleu', supplier: 'PT NTT Seafood', qty: 1000, spesifikasi: '1-2 kg/pc, Frozen', hargaBahanBaku: 41000, hargaProses: 8000, harga: 49000, lastUpdated: '28/08/2026 16:00 WIB' },
+      { cabang: 'Benoa', supplier: 'CV Octopus Dewata', qty: 1000, spesifikasi: '1-2 kg/pc, Frozen', hargaBahanBaku: 40500, hargaProses: 8000, harga: 48500, lastUpdated: '28/08/2026 14:00 WIB' }
     ]
   },
   {
@@ -81,33 +81,33 @@ const INITIAL_BAHAN_BAKU = [
     lastUpdated: '28/08/2026 15:00 WIB by Roberto (Pusat)',
     sumber: [
       { cabang: 'Jakarta', supplier: 'PT Ocean Prima', qty: 4000, spesifikasi: '5 kg up, FOB', hargaBahanBaku: 60000, hargaProses: 8000, harga: 68000, lastUpdated: '28/08/2026 14:00 WIB' },
-      { cabang: 'Bali', supplier: 'CV Bali Marine', qty: 4000, spesifikasi: '5 kg up, FOB', hargaBahanBaku: 60000, hargaProses: 8000, harga: 68000, lastUpdated: '28/08/2026 13:00 WIB' },
+      { cabang: 'Benoa', supplier: 'CV Bali Marine', qty: 4000, spesifikasi: '5 kg up, FOB', hargaBahanBaku: 60000, hargaProses: 8000, harga: 68000, lastUpdated: '28/08/2026 13:00 WIB' },
       { cabang: 'Surabaya', supplier: 'PT Jawa Bahari', qty: 4000, spesifikasi: '5 kg up, FOB', hargaBahanBaku: 60000, hargaProses: 8000, harga: 68000, lastUpdated: '28/08/2026 11:00 WIB' },
       { cabang: 'Makassar', supplier: 'CV Anging Mammiri', qty: 4000, spesifikasi: '5 kg up, FOB', hargaBahanBaku: 60000, hargaProses: 8000, harga: 68000, lastUpdated: '28/08/2026 09:00 WIB' }
     ]
   },
   {
     noRequest: 'INQ-2026-006',
-    buyer: 'PT Indomar Seafood',
+    buyer: 'PT Indomar',
     negara: 'Indonesia',
-    komoditas: 'Cumi-Cumi',
-    qtyPermintaan: 8000,
-    hargaBuyer: 45000,
-    lastUpdated: '28/08/2026 09:00 WIB by Nailah (Pusat)',
+    komoditas: 'Cumi',
+    qtyPermintaan: 20000,
+    hargaBuyer: 65000,
+    lastUpdated: '28/08/2026 10:00 WIB by Utami (Pusat)',
     sumber: []
   },
   {
     noRequest: 'INQ-2026-007',
-    buyer: 'Pacific Harvest Ltd.',
+    buyer: 'Pacific Harvest Ltd',
     negara: 'Korea Selatan',
     komoditas: 'Mackerel',
     qtyPermintaan: 12000,
     hargaBuyer: 55000,
-    lastUpdated: '27/08/2026 14:00 WIB by Tami (Pusat)',
+    lastUpdated: '27/08/2026 16:00 WIB by Ahlan (Pusat)',
     sumber: [
-      { cabang: 'Banyuwangi', supplier: 'PT Selat Bali', qty: 4000, spesifikasi: '200-300 g/pc, IQF', hargaBahanBaku: 44000, hargaProses: 8000, harga: 52000, lastUpdated: '27/08/2026 11:00 WIB' },
-      { cabang: 'Tegal', supplier: 'CV Laut Jawa', qty: 4000, spesifikasi: '200-300 g/pc, IQF', hargaBahanBaku: 44000, hargaProses: 8000, harga: 52000, lastUpdated: '27/08/2026 10:00 WIB' },
-      { cabang: 'Pekalongan', supplier: 'PT Mina Bahari', qty: 4000, spesifikasi: '200-300 g/pc, IQF', hargaBahanBaku: 44000, hargaProses: 8000, harga: 52000, lastUpdated: '27/08/2026 09:00 WIB' }
+      { cabang: 'Belawan', supplier: 'PT Sumatera Fish', qty: 4000, spesifikasi: 'Whole 300-500g', hargaBahanBaku: 45000, hargaProses: 7000, harga: 52000, lastUpdated: '27/08/2026 14:00 WIB' },
+      { cabang: 'Jakarta', supplier: 'CV Lautan Makmur', qty: 4000, spesifikasi: 'Whole 300-500g', hargaBahanBaku: 46000, hargaProses: 7000, harga: 53000, lastUpdated: '27/08/2026 12:00 WIB' },
+      { cabang: 'Pekalongan', supplier: 'PT Pantura Marine', qty: 4000, spesifikasi: 'Whole 300-500g', hargaBahanBaku: 45500, hargaProses: 7000, harga: 52500, lastUpdated: '27/08/2026 10:00 WIB' }
     ]
   },
   {
@@ -116,11 +116,11 @@ const INITIAL_BAHAN_BAKU = [
     negara: 'Jepang',
     komoditas: 'Chirimen',
     qtyPermintaan: 5000,
-    hargaBuyer: 48000,
-    lastUpdated: '26/08/2026 11:00 WIB by Aisyah (Direksi)',
+    hargaBuyer: 85000,
+    lastUpdated: '27/08/2026 11:00 WIB by Nailah (Admin)',
     sumber: [
-      { cabang: 'Ambon', supplier: 'PT Maluku Sejahtera', qty: 2500, spesifikasi: 'Kering, Grade A, 1-2 cm', hargaBahanBaku: 38000, hargaProses: 7000, harga: 45000, lastUpdated: '26/08/2026 10:00 WIB' },
-      { cabang: 'Tupang', supplier: 'CV Nusa Laut', qty: 2500, spesifikasi: 'Kering, Grade A, 1-2 cm', hargaBahanBaku: 38000, hargaProses: 7000, harga: 45000, lastUpdated: '26/08/2026 09:00 WIB' }
+      { cabang: 'Bacan', supplier: 'PT Bacan Mandiri', qty: 2500, spesifikasi: 'Kering 1-2 cm', hargaBahanBaku: 72000, hargaProses: 8000, harga: 80000, lastUpdated: '27/08/2026 10:00 WIB' },
+      { cabang: 'Bitung', supplier: 'CV Celebes Fish', qty: 2500, spesifikasi: 'Kering 1-2 cm', hargaBahanBaku: 73000, hargaProses: 8000, harga: 81000, lastUpdated: '27/08/2026 09:00 WIB' }
     ]
   }
 ];
@@ -131,13 +131,50 @@ export async function GET() {
     await connectToDatabase();
     let bahanBaku = await BahanBaku.find({}).sort({ createdAt: -1 });
 
-    // Seed or update if old incomplete records exist
-    if (bahanBaku.length === 0 || bahanBaku.some(b => !b.buyer || !b.komoditas || (b.sumber?.length > 0 && !b.sumber[0].hargaProses))) {
-      await BahanBaku.deleteMany({});
+    // Seed initial records if collection is empty
+    if (bahanBaku.length === 0) {
       for (const item of INITIAL_BAHAN_BAKU) {
         await BahanBaku.create(item);
       }
       bahanBaku = await BahanBaku.find({}).sort({ createdAt: -1 });
+    }
+
+    // Auto-sync any Permintaan Buyer records that are not yet in BahanBaku
+    try {
+      const allPermintaan = await Permintaan.find({});
+      let hasAdded = false;
+
+      for (const p of allPermintaan) {
+        for (const item of p.items || []) {
+          const komoditasName = item.name;
+          const exists = bahanBaku.some(
+            (bb) =>
+              bb.noRequest === p.noRequest ||
+              (bb.buyer.toLowerCase().trim() === p.buyer.toLowerCase().trim() &&
+                bb.komoditas.toLowerCase().trim() === komoditasName.toLowerCase().trim())
+          );
+
+          if (!exists) {
+            await BahanBaku.create({
+              noRequest: p.noRequest,
+              buyer: p.buyer,
+              negara: p.negara || 'Indonesia',
+              komoditas: komoditasName,
+              qtyPermintaan: item.qty || p.totalQty || 1,
+              hargaBuyer: item.harga || 0,
+              sumber: [], // Belum ada sumber (0 Sumber)
+              lastUpdated: p.lastUpdated || `${p.tanggal} oleh Sistem`,
+            });
+            hasAdded = true;
+          }
+        }
+      }
+
+      if (hasAdded) {
+        bahanBaku = await BahanBaku.find({}).sort({ createdAt: -1 });
+      }
+    } catch (syncErr) {
+      console.error('Error auto-syncing Permintaan to BahanBaku:', syncErr);
     }
 
     return NextResponse.json(bahanBaku, { status: 200 });

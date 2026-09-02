@@ -241,7 +241,7 @@ export function Sidebar({
 
   // --- TAMPILAN SIDEBAR CABANG / DIREKSI (SESUAI PANDUAN REVISI CABANG) ---
   const isDireksi = userRole === 'direksi' || userEmail?.toLowerCase().includes('aisyah') || userEmail?.toLowerCase().includes('titik') || userEmail?.toLowerCase().includes('errinto')
-  const displayRoleCabang = isDireksi ? 'Direksi Cabang' : 'Kantor Cabang'
+  const displayRoleCabang = isDireksi ? 'Direksi' : 'Kantor Cabang'
 
   return (
     <aside key="cabang-sidebar" className="sidebar-container w-64 bg-[#0a192f] text-white flex flex-col justify-between select-none shadow-xl border-r border-[#1e293b]/50">

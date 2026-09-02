@@ -15,7 +15,8 @@ async function isAdminUser() {
     const { payload } = await jwtVerify(token, secret);
     const email = ((payload?.email as string) || '').toLowerCase();
     const name = ((payload?.name as string) || '').toLowerCase();
-    return email.includes('nailah') || name.includes('nailah') || payload?.role === 'admin';
+    const role = ((payload?.role as string) || '').toLowerCase();
+    return email.includes('nailah') || name.includes('nailah') || role === 'admin' || role === 'direksi' || role === 'cabang';
   } catch (e) {
     return false;
   }
@@ -26,7 +27,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     const isAdmin = await isAdminUser();
     if (!isAdmin) {
       return NextResponse.json(
-        { message: 'Akses ditolak. Hanya Admin Sales (Nailah) yang memiliki izin untuk mengubah permintaan atau status.' },
+        { message: 'Akses ditolak. Anda tidak memiliki izin untuk mengubah permintaan atau status.' },
         { status: 403 }
       );
     }
@@ -107,6 +108,33 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
           });
         }
       }
+    }
+
+    // Sinkronisasi update qty & harga ke BahanBaku jika ada
+    try {
+      const BahanBaku = (await import('@/lib/models/BahanBaku')).default;
+      if (updatedPermintaan.items && updatedPermintaan.items.length > 0) {
+        for (const item of updatedPermintaan.items) {
+          const perKg = (item as any).hargaBuyerPerKg || (Number(item.qty) > 0 && Number(item.harga) > 100000 ? Math.round(Number(item.harga) / Number(item.qty)) : Number(item.harga));
+          await BahanBaku.updateMany(
+            { 
+              $or: [
+                { noRequest: updatedPermintaan.noRequest },
+                { buyer: updatedPermintaan.buyer, komoditas: item.name }
+              ]
+            },
+            { 
+              $set: { 
+                qtyPermintaan: item.qty,
+                hargaBuyer: perKg,
+                spesifikasi: item.spesifikasi || item.size || 'Grade A',
+              } 
+            }
+          );
+        }
+      }
+    } catch (syncErr) {
+      console.error('Error syncing to BahanBaku:', syncErr);
     }
 
     return NextResponse.json({ message: 'Permintaan berhasil diperbarui', data: updatedPermintaan }, { status: 200 });

@@ -15,7 +15,8 @@ export default function ProfilPage() {
     email: '',
     telepon: '',
     alamat: '',
-    posisi: 'Admin Sales',
+    role: 'admin',
+    posisi: 'Admin Pusat',
     departemen: 'Sales & Inventory',
     createdAt: ''
   })
@@ -49,7 +50,8 @@ export default function ProfilPage() {
           email: data.email || '',
           telepon: data.telepon || '',
           alamat: data.alamat || '',
-          posisi: data.posisi || 'Admin Sales',
+          role: data.role || '',
+          posisi: data.posisi || '',
           departemen: data.departemen || 'Sales & Inventory',
           createdAt: data.createdAt ? new Date(data.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
         }
@@ -151,7 +153,21 @@ export default function ProfilPage() {
     }
   }
 
-  const isNailah = profile.email?.toLowerCase().includes('nailah')
+  const getDisplayRole = (role: string, name: string, email: string) => {
+    const r = (role || '').toLowerCase()
+    const n = (name || '').toLowerCase()
+    const e = (email || '').toLowerCase()
+    if (r === 'admin' || n.includes('nailah') || e.includes('nailah')) return 'Admin Pusat'
+    if (n.includes('ahlan') || e.includes('ahlan')) return 'Staff Pusat'
+    if (r === 'direksi' || n.includes('aisyah') || n.includes('titik') || n.includes('errin') || e.includes('aisyah') || e.includes('titik') || e.includes('errin')) {
+      return 'Direksi'
+    }
+    if (r === 'cabang' || n.includes('cabang') || e.includes('cabang')) return 'Staff Cabang'
+    if (r === 'staff') return 'Staff Cabang'
+    return 'Direksi'
+  }
+
+  const displayRole = getDisplayRole(profile.role, profile.name, profile.email)
 
   return (
     <MainLayout userName={profile.name} userEmail={profile.email}>
@@ -177,15 +193,13 @@ export default function ProfilPage() {
               {profile.name.charAt(0).toUpperCase()}
             </div>
             <h2 className="text-xl font-bold text-foreground mb-1">{profile.name}</h2>
-            <p className="text-sm text-primary font-medium mb-4">{profile.posisi || (isNailah ? 'Admin Sales' : 'Staff Sales')}</p>
+            <p className="text-sm text-primary font-bold mb-4">{displayRole}</p>
 
             <div className="space-y-2 text-sm pt-4 border-t border-border">
               <div className="flex justify-between items-center py-1">
                 <span className="text-muted-foreground">Role:</span>
-                <span className={`font-semibold px-2.5 py-0.5 rounded-full text-xs capitalize ${
-                  isNailah ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-700'
-                }`}>
-                  {isNailah ? 'Admin' : 'Staff'}
+                <span className="font-bold px-2.5 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 border border-blue-200/60">
+                  {displayRole}
                 </span>
               </div>
               <div className="flex justify-between items-center py-1">
@@ -237,10 +251,10 @@ export default function ProfilPage() {
                     <label className="text-xs font-semibold text-gray-700 block mb-1.5">Posisi / Jabatan</label>
                     <input
                       type="text"
-                      value={formData.posisi}
+                      value={formData.posisi || displayRole}
                       onChange={(e) => handleChange('posisi', e.target.value)}
-                      placeholder="Misal: Admin Sales"
-                      className="w-full px-3.5 py-2 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder={displayRole}
+                      className="w-full px-3.5 py-2 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary font-medium"
                     />
                   </div>
 
@@ -311,7 +325,7 @@ export default function ProfilPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Posisi / Jabatan</p>
-                    <p className="text-foreground font-bold text-base mt-0.5">{profile.posisi || '-'}</p>
+                    <p className="text-foreground font-bold text-base mt-0.5">{displayRole}</p>
                   </div>
                 </div>
 

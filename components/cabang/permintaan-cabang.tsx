@@ -200,9 +200,280 @@ export function PermintaanCabang() {
     komoditas: '',
     spesifikasi: '',
     qty: 0,
+    currencyBuyer: 'USD' as 'USD' | 'IDR' | 'JPY',
+    priceUnit: 'per_kg' as 'per_kg' | 'total',
     hargaBuyer: '', // String to allow empty / Not Available
     catatan: '',
   })
+
+  // Real-time calculation and currency conversion
+  const calculatedPrices = useMemo(() => {
+    const rawVal = parseFloat(formData.hargaBuyer) || 0
+    if (rawVal <= 0) return null
+
+    const qty = Number(formData.qty) || 1
+    const usdRate = rates.USD || 17705
+    const jpyRate = rates.JPY || 109.85
+
+    let pricePerKgIDR = 0
+    let totalPriceIDR = 0
+    let pricePerKgOriginal = 0
+    let totalPriceOriginal = 0
+
+    if (formData.currencyBuyer === 'USD') {
+      if (formData.priceUnit === 'per_kg') {
+        pricePerKgOriginal = rawVal
+        totalPriceOriginal = rawVal * qty
+        pricePerKgIDR = Math.round(rawVal * usdRate)
+        totalPriceIDR = Math.round(totalPriceOriginal * usdRate)
+      } else {
+        totalPriceOriginal = rawVal
+        pricePerKgOriginal = rawVal / qty
+        totalPriceIDR = Math.round(rawVal * usdRate)
+        pricePerKgIDR = Math.round(pricePerKgOriginal * usdRate)
+      }
+    } else if (formData.currencyBuyer === 'JPY') {
+      if (formData.priceUnit === 'per_kg') {
+        pricePerKgOriginal = rawVal
+        totalPriceOriginal = rawVal * qty
+        pricePerKgIDR = Math.round(rawVal * jpyRate)
+        totalPriceIDR = Math.round(totalPriceOriginal * jpyRate)
+      } else {
+        totalPriceOriginal = rawVal
+        pricePerKgOriginal = rawVal / qty
+        totalPriceIDR = Math.round(rawVal * jpyRate)
+        pricePerKgIDR = Math.round(pricePerKgOriginal * jpyRate)
+      }
+    } else {
+      // IDR
+      if (formData.priceUnit === 'per_kg') {
+        pricePerKgOriginal = rawVal
+        totalPriceOriginal = rawVal * qty
+        pricePerKgIDR = rawVal
+        totalPriceIDR = totalPriceOriginal
+      } else {
+        totalPriceOriginal = rawVal
+        pricePerKgOriginal = Math.round(rawVal / qty)
+        totalPriceIDR = rawVal
+        pricePerKgIDR = pricePerKgOriginal
+      }
+    }
+
+    return {
+      pricePerKgIDR,
+      totalPriceIDR,
+      pricePerKgOriginal,
+      totalPriceOriginal,
+      currency: formData.currencyBuyer,
+      unit: formData.priceUnit,
+    }
+  }, [formData.hargaBuyer, formData.currencyBuyer, formData.priceUnit, formData.qty, rates.USD, rates.JPY])
+
+  // Form State for Edit Permintaan (Nego Qty & Harga)
+  const [editFormData, setEditFormData] = useState({
+    id: '',
+    noRequest: '',
+    tanggal: '',
+    buyer: '',
+    negara: '',
+    tujuan: '',
+    komoditas: '',
+    spesifikasi: '',
+    qty: 0,
+    currencyBuyer: 'USD' as 'USD' | 'IDR' | 'JPY',
+    priceUnit: 'per_kg' as 'per_kg' | 'total',
+    hargaBuyer: '', // String in selected currency
+    catatan: '',
+  })
+
+  // Real-time calculation and currency conversion for Edit Form
+  const calculatedEditPrices = useMemo(() => {
+    const rawVal = parseFloat(editFormData.hargaBuyer) || 0
+    if (rawVal <= 0) return null
+
+    const qty = Number(editFormData.qty) || 1
+    const usdRate = rates.USD || 17705
+    const jpyRate = rates.JPY || 109.85
+
+    let pricePerKgIDR = 0
+    let totalPriceIDR = 0
+    let pricePerKgOriginal = 0
+    let totalPriceOriginal = 0
+
+    if (editFormData.currencyBuyer === 'USD') {
+      if (editFormData.priceUnit === 'per_kg') {
+        pricePerKgOriginal = rawVal
+        totalPriceOriginal = rawVal * qty
+        pricePerKgIDR = Math.round(rawVal * usdRate)
+        totalPriceIDR = Math.round(totalPriceOriginal * usdRate)
+      } else {
+        totalPriceOriginal = rawVal
+        pricePerKgOriginal = rawVal / qty
+        totalPriceIDR = Math.round(rawVal * usdRate)
+        pricePerKgIDR = Math.round(pricePerKgOriginal * usdRate)
+      }
+    } else if (editFormData.currencyBuyer === 'JPY') {
+      if (editFormData.priceUnit === 'per_kg') {
+        pricePerKgOriginal = rawVal
+        totalPriceOriginal = rawVal * qty
+        pricePerKgIDR = Math.round(rawVal * jpyRate)
+        totalPriceIDR = Math.round(totalPriceOriginal * jpyRate)
+      } else {
+        totalPriceOriginal = rawVal
+        pricePerKgOriginal = rawVal / qty
+        totalPriceIDR = Math.round(rawVal * jpyRate)
+        pricePerKgIDR = Math.round(pricePerKgOriginal * jpyRate)
+      }
+    } else {
+      // IDR
+      if (editFormData.priceUnit === 'per_kg') {
+        pricePerKgOriginal = rawVal
+        totalPriceOriginal = rawVal * qty
+        pricePerKgIDR = rawVal
+        totalPriceIDR = totalPriceOriginal
+      } else {
+        totalPriceOriginal = rawVal
+        pricePerKgOriginal = Math.round(rawVal / qty)
+        totalPriceIDR = rawVal
+        pricePerKgIDR = pricePerKgOriginal
+      }
+    }
+
+    return {
+      pricePerKgIDR,
+      totalPriceIDR,
+      pricePerKgOriginal,
+      totalPriceOriginal,
+      currency: editFormData.currencyBuyer,
+      unit: editFormData.priceUnit,
+    }
+  }, [editFormData.hargaBuyer, editFormData.currencyBuyer, editFormData.priceUnit, editFormData.qty, rates.USD, rates.JPY])
+
+  const handleOpenEdit = (row: PermintaanRow) => {
+    setSelectedItem(row)
+    
+    // Auto-detect best currency based on country
+    const isJapan = (row.negara || '').toLowerCase().includes('jepang') || (row.negara || '').toLowerCase().includes('japan')
+    const isIndonesia = (row.negara || '').toLowerCase().includes('indonesia')
+    const defaultCurr: 'USD' | 'IDR' | 'JPY' = isJapan ? 'JPY' : isIndonesia ? 'IDR' : 'USD'
+
+    const currentRate = defaultCurr === 'USD' ? (rates.USD || 17705) : defaultCurr === 'JPY' ? (rates.JPY || 109.85) : 1
+    const perKg = (row.qty > 0 && row.hargaBuyer > 0) ? (row.hargaBuyer / row.qty) : 0
+    let defaultPriceStr = ''
+    if (perKg > 0) {
+      if (defaultCurr === 'USD') {
+        defaultPriceStr = (perKg / currentRate).toFixed(2)
+      } else if (defaultCurr === 'JPY') {
+        defaultPriceStr = Math.round(perKg / currentRate).toString()
+      } else {
+        defaultPriceStr = Math.round(perKg).toString()
+      }
+    }
+
+    // Convert date to YYYY-MM-DD for input date
+    let dateVal = new Date().toISOString().split('T')[0]
+    if (row.tanggal && row.tanggal.includes('/')) {
+      const parts = row.tanggal.split('/')
+      if (parts.length === 3) {
+        dateVal = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
+      }
+    }
+
+    setEditFormData({
+      id: row._id,
+      noRequest: row.noRequest,
+      tanggal: dateVal,
+      buyer: row.buyer,
+      negara: row.negara,
+      tujuan: row.tujuan || row.negara,
+      komoditas: row.komoditas,
+      spesifikasi: row.spesifikasi,
+      qty: row.qty,
+      currencyBuyer: defaultCurr,
+      priceUnit: 'per_kg',
+      hargaBuyer: defaultPriceStr,
+      catatan: row.catatan || '',
+    })
+
+    setIsEditModalOpen(true)
+  }
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editFormData.buyer || !editFormData.komoditas || editFormData.qty <= 0) {
+      alert('Mohon lengkapi Nama Buyer, Komoditas, dan Kuantitas (Qty).')
+      return
+    }
+
+    const numericTotalPrice = calculatedEditPrices ? calculatedEditPrices.totalPriceIDR : (editFormData.hargaBuyer ? parseFloat(editFormData.hargaBuyer) : 0)
+    const numericPerKgPrice = calculatedEditPrices ? calculatedEditPrices.pricePerKgIDR : (editFormData.qty > 0 ? Math.round(numericTotalPrice / editFormData.qty) : numericTotalPrice)
+
+    let formattedDate = ''
+    if (editFormData.tanggal) {
+      const parts = editFormData.tanggal.split('-')
+      if (parts.length === 3) {
+        formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`
+      } else {
+        formattedDate = editFormData.tanggal
+      }
+    } else {
+      const now = new Date()
+      formattedDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
+    }
+
+    // Update local state
+    setData((prev) =>
+      prev.map((item) =>
+        item._id === editFormData.id
+          ? {
+              ...item,
+              tanggal: formattedDate,
+              buyer: editFormData.buyer,
+              negara: editFormData.negara,
+              tujuan: editFormData.tujuan,
+              komoditas: editFormData.komoditas,
+              spesifikasi: editFormData.spesifikasi,
+              qty: Number(editFormData.qty),
+              hargaBuyer: numericTotalPrice,
+              lastUpdated: `${formattedDate} (Dinego oleh ${userName})`,
+              catatan: editFormData.catatan,
+            }
+          : item
+      )
+    )
+
+    setIsEditModalOpen(false)
+
+    // Persist to Backend API
+    try {
+      const rawId = editFormData.id.includes('-') && editFormData.id.length > 20 ? editFormData.id.split('-')[0] : editFormData.id
+      if (rawId && !rawId.startsWith('inq-')) {
+        await fetch(`/api/permintaan/${rawId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tanggal: formattedDate,
+            buyer: editFormData.buyer,
+            negara: editFormData.negara,
+            tujuan: editFormData.tujuan,
+            items: [
+              {
+                name: editFormData.komoditas,
+                spesifikasi: editFormData.spesifikasi,
+                qty: Number(editFormData.qty),
+                harga: numericTotalPrice,
+                hargaBuyerPerKg: numericPerKgPrice,
+              },
+            ],
+            catatan: editFormData.catatan,
+          }),
+        })
+      }
+      fetchRealData()
+    } catch (err) {
+      console.error('Error updating Permintaan:', err)
+    }
+  }
 
   useEffect(() => {
     fetchProfile()
@@ -446,7 +717,8 @@ export function PermintaanCabang() {
       return
     }
 
-    const numericPrice = formData.hargaBuyer ? parseFloat(formData.hargaBuyer) : 0
+    const numericTotalPrice = calculatedPrices ? calculatedPrices.totalPriceIDR : 0
+    const numericPerKgPrice = calculatedPrices ? calculatedPrices.pricePerKgIDR : 0
 
     // Automatic matching with stocks/suppliers
     const inBarang = barangList.some((b) =>
@@ -483,7 +755,7 @@ export function PermintaanCabang() {
       komoditas: formData.komoditas,
       spesifikasi: formData.spesifikasi || 'Grade A',
       qty: Number(formData.qty),
-      hargaBuyer: numericPrice,
+      hargaBuyer: numericTotalPrice,
       statusStok: autoStatusStok,
       lastUpdated: `${formattedDate} oleh ${userName}`,
       catatan: formData.catatan,
@@ -508,7 +780,8 @@ export function PermintaanCabang() {
               name: formData.komoditas,
               spesifikasi: formData.spesifikasi,
               qty: Number(formData.qty),
-              harga: numericPrice,
+              harga: numericTotalPrice,
+              hargaBuyerPerKg: numericPerKgPrice,
             },
           ],
           statusStok: autoStatusStok,
@@ -528,6 +801,8 @@ export function PermintaanCabang() {
       komoditas: '',
       spesifikasi: '',
       qty: 0,
+      currencyBuyer: 'USD',
+      priceUnit: 'per_kg',
       hargaBuyer: '',
       catatan: '',
     })
@@ -856,7 +1131,7 @@ export function PermintaanCabang() {
                 className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Tambah Permintaan</span>
+                <span>Tambah Permintaan</span>
               </button>
             </div>
           </div>
@@ -932,16 +1207,25 @@ export function PermintaanCabang() {
                           {row.lastUpdated}
                         </td>
                         <td className="py-3 px-3 text-center whitespace-nowrap">
-                          <button
-                            onClick={() => {
-                              setSelectedItem(row)
-                              setIsDetailModalOpen(true)
-                            }}
-                            className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                            title="Lihat Detail Permintaan"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => handleOpenEdit(row)}
+                              className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              title="Edit Permintaan (Nego Qty & Harga)"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedItem(row)
+                                setIsDetailModalOpen(true)
+                              }}
+                              className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                              title="Lihat Detail Permintaan"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -1078,17 +1362,97 @@ export function PermintaanCabang() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      Harga Buyer (IDR) <span className="font-normal text-slate-400">(Opsional)</span>
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="Contoh: 405000000"
-                      value={formData.hargaBuyer}
-                      onChange={(e) => setFormData({ ...formData, hargaBuyer: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
-                    />
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block font-bold text-slate-700">
+                        Harga Buyer <span className="font-normal text-slate-400">(Opsional)</span>
+                      </label>
+                      {/* Unit Selector: Per kg vs Total */}
+                      <div className="inline-flex rounded-lg p-0.5 bg-slate-100 border border-slate-200 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, priceUnit: 'per_kg' })}
+                          className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                            formData.priceUnit === 'per_kg'
+                              ? 'bg-white text-blue-600 shadow-xs'
+                              : 'text-slate-500 hover:text-slate-700'
+                          }`}
+                        >
+                          / kg
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, priceUnit: 'total' })}
+                          className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                            formData.priceUnit === 'total'
+                              ? 'bg-white text-blue-600 shadow-xs'
+                              : 'text-slate-500 hover:text-slate-700'
+                          }`}
+                        >
+                          Total
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-1.5">
+                      {/* Currency Selector: USD / IDR / JPY */}
+                      <select
+                        value={formData.currencyBuyer}
+                        onChange={(e) => setFormData({ ...formData, currencyBuyer: e.target.value as any })}
+                        className="w-28 px-2.5 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl font-bold text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                      >
+                        <option value="USD">USD ($)</option>
+                        <option value="IDR">IDR (Rp)</option>
+                        <option value="JPY">JPY (¥)</option>
+                      </select>
+
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder={
+                          formData.currencyBuyer === 'USD'
+                            ? formData.priceUnit === 'per_kg' ? 'Contoh: 2.10' : 'Contoh: 52500'
+                            : formData.currencyBuyer === 'JPY'
+                            ? formData.priceUnit === 'per_kg' ? 'Contoh: 350' : 'Contoh: 8750000'
+                            : formData.priceUnit === 'per_kg' ? 'Contoh: 45000' : 'Contoh: 405000000'
+                        }
+                        value={formData.hargaBuyer}
+                        onChange={(e) => setFormData({ ...formData, hargaBuyer: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 text-xs"
+                      />
+                    </div>
+
+                    {/* Real-time Currency Conversion Box */}
+                    {calculatedPrices && (
+                      <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-[11px] space-y-0.5 text-emerald-900 animate-in fade-in duration-150">
+                        <div className="flex justify-between items-center font-bold">
+                          <span>Konversi IDR:</span>
+                          <span className="text-emerald-700 font-extrabold text-xs">
+                            Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.totalPriceIDR)} Total
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                          <span>Per kg:</span>
+                          <span className="font-semibold text-slate-800">
+                            {formData.currencyBuyer !== 'IDR' ? (
+                              <>
+                                {formData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
+                                {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrices.pricePerKgOriginal)}{' '}
+                                (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)}/kg)
+                              </>
+                            ) : (
+                              `Rp ${new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)}/kg`
+                            )}
+                          </span>
+                        </div>
+                        {formData.currencyBuyer !== 'IDR' && (
+                          <p className="text-[10px] text-emerald-700/80 italic pt-0.5">
+                            *Kurs: 1 {formData.currencyBuyer} = Rp{' '}
+                            {new Intl.NumberFormat('id-ID').format(formData.currencyBuyer === 'USD' ? rates.USD : rates.JPY)}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1259,6 +1623,238 @@ export function PermintaanCabang() {
                   Simpan Kurs
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 4: EDIT PERMINTAAN BUYER (NEGO QTY & HARGA) */}
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+            <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <Edit className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800">Edit Permintaan Buyer (Negosiasi)</h3>
+                    <p className="text-[11px] text-slate-400">
+                      Sesuaikan kuantitas atau harga kesepakatan baru hasil negosiasi ({editFormData.noRequest})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEdit} className="space-y-3.5 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Tanggal Permintaan <span className="font-normal text-blue-600">(Pilih dari kalender)</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        required
+                        value={editFormData.tanggal}
+                        onChange={(e) => setEditFormData({ ...editFormData, tanggal: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Nama Buyer *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: Ba Hai JSC"
+                      value={editFormData.buyer}
+                      onChange={(e) => setEditFormData({ ...editFormData, buyer: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Negara / Tujuan *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: Vietnam"
+                      value={editFormData.negara}
+                      onChange={(e) => setEditFormData({ ...editFormData, negara: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Komoditas / Ikan *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: Cakalang / Tuna"
+                      value={editFormData.komoditas}
+                      onChange={(e) => setEditFormData({ ...editFormData, komoditas: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-bold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Kuantitas (kg) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      placeholder="Contoh: 25000"
+                      value={editFormData.qty || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, qty: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-extrabold text-blue-700"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block font-bold text-slate-700">
+                        Harga Negosiasi Buyer <span className="font-normal text-slate-400">(Opsional)</span>
+                      </label>
+                      {/* Unit Selector: Per kg vs Total */}
+                      <div className="inline-flex rounded-lg p-0.5 bg-slate-100 border border-slate-200 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setEditFormData({ ...editFormData, priceUnit: 'per_kg' })}
+                          className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                            editFormData.priceUnit === 'per_kg'
+                              ? 'bg-white text-blue-600 shadow-xs'
+                              : 'text-slate-500 hover:text-slate-700'
+                          }`}
+                        >
+                          / kg
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditFormData({ ...editFormData, priceUnit: 'total' })}
+                          className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                            editFormData.priceUnit === 'total'
+                              ? 'bg-white text-blue-600 shadow-xs'
+                              : 'text-slate-500 hover:text-slate-700'
+                          }`}
+                        >
+                          Total
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-1.5">
+                      {/* Currency Selector: USD / IDR / JPY */}
+                      <select
+                        value={editFormData.currencyBuyer}
+                        onChange={(e) => setEditFormData({ ...editFormData, currencyBuyer: e.target.value as any })}
+                        className="w-28 px-2.5 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl font-bold text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                      >
+                        <option value="USD">USD ($)</option>
+                        <option value="IDR">IDR (Rp)</option>
+                        <option value="JPY">JPY (¥)</option>
+                      </select>
+
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder={
+                          editFormData.currencyBuyer === 'USD'
+                            ? editFormData.priceUnit === 'per_kg' ? 'Contoh: 2.10' : 'Contoh: 52500'
+                            : editFormData.currencyBuyer === 'JPY'
+                            ? editFormData.priceUnit === 'per_kg' ? 'Contoh: 350' : 'Contoh: 8750000'
+                            : editFormData.priceUnit === 'per_kg' ? 'Contoh: 45000' : 'Contoh: 405000000'
+                        }
+                        value={editFormData.hargaBuyer}
+                        onChange={(e) => setEditFormData({ ...editFormData, hargaBuyer: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 text-xs"
+                      />
+                    </div>
+
+                    {/* Real-time Currency Conversion Box */}
+                    {calculatedEditPrices && (
+                      <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-[11px] space-y-0.5 text-emerald-900 animate-in fade-in duration-150">
+                        <div className="flex justify-between items-center font-bold">
+                          <span>Konversi IDR:</span>
+                          <span className="text-emerald-700 font-extrabold text-xs">
+                            Rp {new Intl.NumberFormat('id-ID').format(calculatedEditPrices.totalPriceIDR)} Total
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                          <span>Per kg:</span>
+                          <span className="font-semibold text-slate-800">
+                            {editFormData.currencyBuyer !== 'IDR' ? (
+                              <>
+                                {editFormData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
+                                {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedEditPrices.pricePerKgOriginal)}{' '}
+                                (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedEditPrices.pricePerKgIDR)}/kg)
+                              </>
+                            ) : (
+                              `Rp ${new Intl.NumberFormat('id-ID').format(calculatedEditPrices.pricePerKgIDR)}/kg`
+                            )}
+                          </span>
+                        </div>
+                        {editFormData.currencyBuyer !== 'IDR' && (
+                          <p className="text-[10px] text-emerald-700/80 italic pt-0.5">
+                            *Kurs: 1 {editFormData.currencyBuyer} = Rp{' '}
+                            {new Intl.NumberFormat('id-ID').format(editFormData.currencyBuyer === 'USD' ? rates.USD : rates.JPY)}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Spesifikasi</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 2 kg up, FOB, Grade A"
+                    value={editFormData.spesifikasi}
+                    onChange={(e) => setEditFormData({ ...editFormData, spesifikasi: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Catatan Negosiasi / Tambahan</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Catatan hasil negosiasi dengan buyer..."
+                    value={editFormData.catatan}
+                    onChange={(e) => setEditFormData({ ...editFormData, catatan: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 text-xs"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer"
+                  >
+                    Simpan Perubahan Negosiasi
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

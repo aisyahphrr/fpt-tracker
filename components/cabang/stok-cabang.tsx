@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { DAFTAR_CABANG } from '@/lib/constants/cabang'
 import {
   Package,
   Building2,
@@ -225,16 +226,104 @@ export function StokCabang() {
 
   // Form State for Update Stok (Masuk / Keluar)
   const [updateType, setUpdateType] = useState<'masuk' | 'keluar'>('masuk')
+  const [isCustomKomoditas, setIsCustomKomoditas] = useState(false)
+  const [customKomoditasNama, setCustomKomoditasNama] = useState('')
   const [updateForm, setUpdateForm] = useState({
     komoditas: 'Yellowfin Tuna (YFT)',
     spesifikasi: 'Whole Round 2-4 kg up',
-    cabang: 'Jakarta (Kamal)',
+    cabang: 'Jakarta',
     tanggal: new Date().toISOString().split('T')[0],
     qty: '',
     satuan: 'kg',
     keterangan: '',
     lampiranName: '',
   })
+
+  // Form State for Edit Data Stok (Tanda Pena)
+  const [editForm, setEditForm] = useState({
+    id: '',
+    komoditas: '',
+    spesifikasi: '',
+    cabang: 'Jakarta',
+    qtyAvailable: '',
+    satuan: 'kg',
+  })
+
+  const handleOpenEdit = (row: StokItemRow) => {
+    setSelectedItem(row)
+    setEditForm({
+      id: row._id,
+      komoditas: row.komoditas,
+      spesifikasi: row.spesifikasi,
+      cabang: row.cabang,
+      qtyAvailable: row.qtyAvailable.toString(),
+      satuan: row.satuan || 'kg',
+    })
+    setIsEditModalOpen(true)
+  }
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editForm.komoditas || !editForm.qtyAvailable) {
+      alert('Mohon lengkapi data stok.')
+      return
+    }
+
+    const numericQty = parseFloat(editForm.qtyAvailable) || 0
+    const now = new Date()
+    const formattedDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB oleh ${userName}`
+
+    // Update locally in state
+    setData((prev) =>
+      prev.map((item) =>
+        item._id === editForm.id
+          ? {
+              ...item,
+              komoditas: editForm.komoditas,
+              spesifikasi: editForm.spesifikasi,
+              cabang: editForm.cabang,
+              qtyAvailable: numericQty,
+              satuan: editForm.satuan,
+              lastUpdated: formattedDate,
+            }
+          : item
+      )
+    )
+    setIsEditModalOpen(false)
+
+    // Persist to backend
+    try {
+      if (editForm.id && !editForm.id.startsWith('stok-') && !editForm.id.startsWith('item-')) {
+        await fetch(`/api/barang/${editForm.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nama: editForm.komoditas,
+            kategori: editForm.spesifikasi,
+            cabang: editForm.cabang,
+            stokAwal: numericQty,
+            satuan: editForm.satuan,
+            lastUpdated: formattedDate,
+          }),
+        })
+      } else {
+        await fetch('/api/barang', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nama: editForm.komoditas,
+            kategori: editForm.spesifikasi,
+            cabang: editForm.cabang,
+            stokAwal: numericQty,
+            satuan: editForm.satuan,
+          }),
+        })
+      }
+      fetchRealBarangData()
+    } catch (err) {
+      console.error('Error updating stock item:', err)
+    }
+  }
 
   useEffect(() => {
     fetchProfile()
@@ -247,10 +336,8 @@ export function StokCabang() {
       if (res.ok) {
         const d = await res.json()
         if (d?.name) {
-          const emailClean = (d.email || '').toLowerCase()
-          const isDireksi = d.role === 'direksi' || emailClean.includes('aisyah')
-          const roleLabel = isDireksi ? 'Direksi' : 'Staff Cabang'
-          setUserName(`${d.name.toUpperCase()} (${roleLabel})`)
+          const roleLabel = d.role === 'direksi' ? 'Direksi' : 'Staff Cabang'
+          setUserName(`${d.name} (${roleLabel})`)
         }
       }
     } catch (e) {
@@ -263,67 +350,44 @@ export function StokCabang() {
       setIsLoading(true)
       const res = await fetch('/api/barang')
       if (res.ok) {
-        const json = await res.json()
-        if (json && json.length > 0) {
-          const mapped: StokItemRow[] = json.map((b: any, idx: number) => {
-            const avail = (b.stokAwal || 0) + (b.barangMasuk || 0) - (b.barangKeluar || 0)
-            const upDate = b.updatedAt ? new Date(b.updatedAt) : new Date()
-            const dateFmt = `${upDate.getDate()}/${upDate.getMonth() + 1}/${upDate.getFullYear()}`
-            return {
-              _id: b._id || `stok-${idx}`,
-              komoditas: b.nama || 'Ikan',
-              spesifikasi: b.kategori || 'Grade A',
-              cabang: b.cabang || 'Jakarta (Kamal)',
-              qtyAvailable: avail > 0 ? avail : 1000,
-              satuan: 'kg',
-              lastUpdated: b.lastUpdated || `${dateFmt} oleh ${userName}`,
-            }
-          })
-          setData(mapped)
-
-          const now = new Date()
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-          setHeaderLastUpdated(`Last Updated: ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}, ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`)
+        const items = await res.json()
+        if (Array.isArray(items) && items.length > 0) {
+          const rows: StokItemRow[] = items.map((b: any, idx: number) => ({
+            _id: b._id || `item-${idx}`,
+            komoditas: b.nama || 'Ikan Laut',
+            spesifikasi: b.kategori || 'Grade A',
+            cabang: b.cabang || 'Jakarta',
+            qtyAvailable: typeof b.stokAwal === 'number' ? b.stokAwal : 0,
+            satuan: b.satuan || 'kg',
+            lastUpdated: b.lastUpdated || 'Baru saja',
+          }))
+          setData(rows)
+          if (rows.length > 0 && !updateForm.komoditas) {
+            setUpdateForm((prev) => ({ ...prev, komoditas: rows[0].komoditas }))
+          }
         }
       }
-    } catch (e) {
-      console.error('Error fetching barang data:', e)
+    } catch (err) {
+      console.error('Error fetching real barang data:', err)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Filter Dropdown Options
+  // Derived filter options
   const komoditasOptions = useMemo(() => {
-    const set = new Set(data.map((d) => d.komoditas).filter(Boolean))
-    return ['Semua Komoditas', ...Array.from(set)]
+    const list = Array.from(new Set(data.map((d) => d.komoditas))).filter(Boolean)
+    return ['Semua Komoditas', ...list]
   }, [data])
 
   const spesifikasiOptions = useMemo(() => {
-    const set = new Set(data.map((d) => d.spesifikasi).filter(Boolean))
-    return ['Semua Spesifikasi', ...Array.from(set)]
+    const list = Array.from(new Set(data.map((d) => d.spesifikasi))).filter(Boolean)
+    return ['Semua Spesifikasi', ...list]
   }, [data])
 
   const cabangOptions = useMemo(() => {
-    const set = new Set(data.map((d) => d.cabang).filter(Boolean))
-    return ['Semua Cabang', ...Array.from(set)]
-  }, [data])
-
-  // Filtered Rows
-  const filteredRows = useMemo(() => {
-    return data.filter((row) => {
-      if (selectedKomoditas !== 'Semua Komoditas' && row.komoditas !== selectedKomoditas) {
-        return false
-      }
-      if (selectedSpesifikasi !== 'Semua Spesifikasi' && row.spesifikasi !== selectedSpesifikasi) {
-        return false
-      }
-      if (selectedCabang !== 'Semua Cabang' && row.cabang !== selectedCabang) {
-        return false
-      }
-      return true
-    })
-  }, [data, selectedKomoditas, selectedSpesifikasi, selectedCabang])
+    return ['Semua Cabang', ...DAFTAR_CABANG]
+  }, [])
 
   // KPI Calculations
   const totalKomoditasCount = useMemo(() => {
@@ -338,6 +402,22 @@ export function StokCabang() {
     return new Set(data.map((d) => d.cabang)).size
   }, [data])
 
+  // Filtered Rows
+  const filteredRows = useMemo(() => {
+    return data.filter((row) => {
+      if (selectedKomoditas !== 'Semua Komoditas' && row.komoditas !== selectedKomoditas) {
+        return false
+      }
+      if (selectedSpesifikasi !== 'Semua Spesifikasi' && row.spesifikasi !== selectedSpesifikasi) {
+        return false
+      }
+      if (selectedCabang !== 'Semua Cabang' && row.cabang.toLowerCase().trim() !== selectedCabang.toLowerCase().trim()) {
+        return false
+      }
+      return true
+    })
+  }, [data, selectedKomoditas, selectedSpesifikasi, selectedCabang])
+
   // Pagination
   const totalPages = Math.ceil(filteredRows.length / itemsPerPage) || 1
   const paginatedRows = useMemo(() => {
@@ -345,12 +425,18 @@ export function StokCabang() {
     return filteredRows.slice(start, start + itemsPerPage)
   }, [filteredRows, currentPage])
 
-  // Handle Save Update Stok (Stok Masuk / Stok Keluar)
+  // Handle Save Update Stok (Stok Masuk / Keluar)
   const handleSaveUpdateStok = async (e: React.FormEvent) => {
     e.preventDefault()
     const numericQty = parseFloat(updateForm.qty) || 0
     if (numericQty <= 0) {
       alert('Mohon masukkan jumlah kuantitas yang valid.')
+      return
+    }
+
+    const finalKomoditas = isCustomKomoditas ? customKomoditasNama.trim() : updateForm.komoditas
+    if (!finalKomoditas) {
+      alert('Mohon masukkan nama komoditas.')
       return
     }
 
@@ -360,8 +446,8 @@ export function StokCabang() {
     // Find existing matching row or create new
     const existingIndex = data.findIndex(
       (d) =>
-        d.komoditas.toLowerCase() === updateForm.komoditas.toLowerCase() &&
-        d.cabang.toLowerCase() === updateForm.cabang.toLowerCase()
+        d.komoditas.toLowerCase().trim() === finalKomoditas.toLowerCase().trim() &&
+        d.cabang.toLowerCase().trim() === updateForm.cabang.toLowerCase().trim()
     )
 
     let updatedData = [...data]
@@ -379,7 +465,7 @@ export function StokCabang() {
     } else {
       const newRow: StokItemRow = {
         _id: `stok-${Date.now()}`,
-        komoditas: updateForm.komoditas,
+        komoditas: finalKomoditas,
         spesifikasi: updateForm.spesifikasi || 'Grade A',
         cabang: updateForm.cabang,
         qtyAvailable: updateType === 'masuk' ? numericQty : 0,
@@ -398,7 +484,7 @@ export function StokCabang() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nama: updateForm.komoditas,
+          nama: finalKomoditas,
           kategori: updateForm.spesifikasi,
           cabang: updateForm.cabang,
           stokAwal: updateType === 'masuk' ? numericQty : 0,
@@ -406,15 +492,19 @@ export function StokCabang() {
           barangKeluar: updateType === 'keluar' ? numericQty : 0,
         }),
       })
+      // Refresh real data to ensure all filter dropdowns update
+      fetchRealBarangData()
     } catch (err) {
       console.error('Error saving stock to backend:', err)
     }
 
     // Reset Form
+    setIsCustomKomoditas(false)
+    setCustomKomoditasNama('')
     setUpdateForm({
-      komoditas: 'Yellowfin Tuna (YFT)',
-      spesifikasi: 'Whole Round 2-4 kg up',
-      cabang: 'Jakarta (Kamal)',
+      komoditas: finalKomoditas,
+      spesifikasi: '',
+      cabang: 'Jakarta',
       tanggal: new Date().toISOString().split('T')[0],
       qty: '',
       satuan: 'kg',
@@ -465,7 +555,7 @@ export function StokCabang() {
               className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-all"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Update Stok</span>
+              <span>Update Stok</span>
             </button>
           </div>
         </div>
@@ -678,10 +768,7 @@ export function StokCabang() {
                           <td className="py-3.5 px-3 text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1">
                               <button
-                                onClick={() => {
-                                  setSelectedItem(row)
-                                  setIsEditModalOpen(true)
-                                }}
+                                onClick={() => handleOpenEdit(row)}
                                 className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                                 title="Edit Data Stok"
                               >
@@ -932,21 +1019,69 @@ export function StokCabang() {
                 </div>
 
                 <form onSubmit={handleSaveUpdateStok} id="updateStokForm" className="space-y-3 text-xs">
-                  {/* Komoditas */}
+                  {/* Komoditas: Dropdown OR Custom Input */}
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      Komoditas <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      required
-                      value={updateForm.komoditas}
-                      onChange={(e) => setUpdateForm({ ...updateForm, komoditas: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    >
-                      {komoditasOptions.filter((k) => k !== 'Semua Komoditas').map((k) => (
-                        <option key={k} value={k}>{k}</option>
-                      ))}
-                    </select>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="font-bold text-slate-700 flex items-center gap-1">
+                        Komoditas <span className="text-rose-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomKomoditas(!isCustomKomoditas)
+                          if (!isCustomKomoditas) {
+                            setCustomKomoditasNama('')
+                          }
+                        }}
+                        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg border border-blue-200 transition-colors cursor-pointer"
+                      >
+                        {isCustomKomoditas ? '← Pilih dari List' : '+ Ketik Komoditas Baru'}
+                      </button>
+                    </div>
+
+                    {isCustomKomoditas ? (
+                      <div className="space-y-1.5">
+                        <input
+                          type="text"
+                          required
+                          autoFocus
+                          placeholder="Ketik nama komoditas / ikan baru..."
+                          value={customKomoditasNama}
+                          onChange={(e) => setCustomKomoditasNama(e.target.value)}
+                          className="w-full px-3 py-2 bg-blue-50/50 border border-blue-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800"
+                        />
+                        <p className="text-[10px] text-blue-600 font-medium">
+                          💡 Masukkan nama ikan di luar daftar pilihan (akan otomatis tersimpan sebagai komoditas baru).
+                        </p>
+                      </div>
+                    ) : (
+                      <select
+                        required
+                        value={updateForm.komoditas}
+                        onChange={(e) => {
+                          if (e.target.value === '__custom__') {
+                            setIsCustomKomoditas(true)
+                            setCustomKomoditasNama('')
+                          } else {
+                            setUpdateForm({ ...updateForm, komoditas: e.target.value })
+                          }
+                        }}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium"
+                      >
+                        <option value="__custom__" className="font-bold text-blue-600">
+                          + Ketik Komoditas Baru (Di Luar List)...
+                        </option>
+                        <optgroup label="Pilih dari Komoditas Tersedia">
+                          {komoditasOptions
+                            .filter((k) => k !== 'Semua Komoditas')
+                            .map((k) => (
+                              <option key={k} value={k}>
+                                {k}
+                              </option>
+                            ))}
+                        </optgroup>
+                      </select>
+                    )}
                   </div>
 
                   {/* Spesifikasi / Size */}
@@ -975,11 +1110,9 @@ export function StokCabang() {
                       onChange={(e) => setUpdateForm({ ...updateForm, cabang: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
                     >
-                      {['Jakarta (Kamal)', 'Bitung', 'Surabaya (Perak)', 'Ambon', 'Makassar', 'Pekalongan', 'Manado', 'Ternate', 'Bali', 'Banyuwangi', 'Kupang', 'Bau-Bau', 'Kendari', 'Sorong', 'Belawan'].map(
-                        (c) => (
-                          <option key={c} value={c}>{c}</option>
-                        )
-                      )}
+                      {DAFTAR_CABANG.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -1115,6 +1248,126 @@ export function StokCabang() {
                   Tutup
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 7. MODAL EDIT DATA STOK (TANDA PENA) */}
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <Edit className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800">Edit Data Stok Ikan</h3>
+                    <p className="text-[11px] text-slate-400">Perbarui rincian atau jumlah stok tersedia</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEdit} className="space-y-3 text-xs">
+                {/* Komoditas */}
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Nama Komoditas <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.komoditas}
+                    onChange={(e) => setEditForm({ ...editForm, komoditas: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800"
+                  />
+                </div>
+
+                {/* Spesifikasi / Size */}
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Spesifikasi / Size <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.spesifikasi}
+                    onChange={(e) => setEditForm({ ...editForm, spesifikasi: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 text-slate-800"
+                  />
+                </div>
+
+                {/* Lokasi / Cabang */}
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Lokasi / Cabang <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={editForm.cabang}
+                    onChange={(e) => setEditForm({ ...editForm, cabang: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium"
+                  >
+                    {DAFTAR_CABANG.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Qty Available & Satuan */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Qty Available <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={editForm.qtyAvailable}
+                      onChange={(e) => setEditForm({ ...editForm, qtyAvailable: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-extrabold text-blue-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Satuan <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={editForm.satuan}
+                      onChange={(e) => setEditForm({ ...editForm, satuan: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium"
+                    >
+                      <option value="kg">kg</option>
+                      <option value="ton">ton</option>
+                      <option value="ekor">ekor</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

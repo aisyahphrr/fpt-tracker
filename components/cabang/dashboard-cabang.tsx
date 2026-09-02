@@ -48,7 +48,7 @@ const PERIOD_OPTIONS = [
 ]
 
 export function DashboardCabang() {
-  const [userName, setUserName] = useState('AISYAH (Direksi Cabang)')
+  const [userName, setUserName] = useState('AISYAH (Direksi)')
   const [selectedKomoditas, setSelectedKomoditas] = useState('Semua Komoditas')
   const [selectedPeriod, setSelectedPeriod] = useState('Semua Waktu')
   const [lastUpdatedTime, setLastUpdatedTime] = useState('')
@@ -72,7 +72,7 @@ export function DashboardCabang() {
         if (data?.name) {
           const emailClean = (data.email || '').toLowerCase()
           const isDireksi = data.role === 'direksi' || emailClean.includes('aisyah')
-          const roleLabel = isDireksi ? 'Direksi Cabang' : 'Staff Cabang'
+          const roleLabel = isDireksi ? 'Direksi' : 'Staff Cabang'
           setUserName(`${data.name.toUpperCase()} (${roleLabel})`)
         }
       }

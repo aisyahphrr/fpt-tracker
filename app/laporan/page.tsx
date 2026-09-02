@@ -20,12 +20,14 @@ export default function LaporanPage() {
         const email = (data?.email || '').toLowerCase()
         const role = (data?.role || '').toLowerCase()
 
-        const pusatUser =
-          email.includes('nailah') ||
-          email.includes('ahlan') ||
-          (role === 'admin' && !email.includes('cabang') && !email.includes('aisyah'))
+        const isCabang =
+          data?.portalMode === 'cabang' ||
+          role === 'direksi' ||
+          role === 'cabang' ||
+          email.includes('aisyah') ||
+          email.includes('cabang')
 
-        setIsPusat(pusatUser)
+        setIsPusat(!isCabang)
       }
     } catch (e) {
       console.error(e)

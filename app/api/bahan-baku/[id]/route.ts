@@ -15,7 +15,8 @@ async function isAdminUser() {
     const { payload } = await jwtVerify(token, secret);
     const email = ((payload?.email as string) || '').toLowerCase();
     const name = ((payload?.name as string) || '').toLowerCase();
-    return email.includes('nailah') || name.includes('nailah') || payload?.role === 'admin';
+    const role = ((payload?.role as string) || '').toLowerCase();
+    return email.includes('nailah') || name.includes('nailah') || role === 'admin' || role === 'direksi' || role === 'cabang';
   } catch (e) {
     return false;
   }

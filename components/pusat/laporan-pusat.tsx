@@ -108,7 +108,7 @@ export function LaporanPusat() {
 
   const barangReport = barangData.map(b => {
     const mutasiItem = mutasiData.filter(m => {
-      const bId = typeof m.barangId === 'object' ? m.barangId._id : m.barangId;
+      const bId = m?.barangId && typeof m.barangId === 'object' ? m.barangId._id : m?.barangId;
       return bId === b._id;
     });
 

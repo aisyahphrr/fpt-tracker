@@ -17,10 +17,10 @@ export const ALL_STANDARD_ACCOUNTS: { [email: string]: { name: string; email: st
   'robertto@perikananindonesia.co.id': { name: 'Robertto', email: 'robertto@perikananindonesia.co.id', role: 'admin', defaultPass: '12345678', posisi: 'Tim Pusat', departemen: 'Kantor Pusat', canSwitchPortal: true },
   'yodiadri@perikananindonesia.co.id': { name: 'Yodi Adri', email: 'yodiadri@perikananindonesia.co.id', role: 'admin', defaultPass: '12345678', posisi: 'Tim Pusat', departemen: 'Kantor Pusat', canSwitchPortal: true },
 
-  // --- 2. DIREKSI CABANG ---
-  'aisyah@gmail.com': { name: 'Aisyah', email: 'aisyah@gmail.com', role: 'direksi', defaultPass: '123123', posisi: 'Direksi Cabang', departemen: 'Direksi Cabang' },
-  'titikmustikasari@perikananindonesia.co.id': { name: 'Titik Mustikasari', email: 'titikmustikasari@perikananindonesia.co.id', role: 'direksi', defaultPass: '12345678', posisi: 'Direksi Cabang', departemen: 'Direksi Cabang' },
-  'errintopardede@perikananindonesia.co.id': { name: 'Errinto Pardede', email: 'errintopardede@perikananindonesia.co.id', role: 'direksi', defaultPass: '12345678', posisi: 'Direksi Cabang', departemen: 'Direksi Cabang' },
+  // --- 2. DIREKSI ---
+  'aisyah@gmail.com': { name: 'Aisyah', email: 'aisyah@gmail.com', role: 'direksi', defaultPass: '123123', posisi: 'Direksi', departemen: 'Direksi' },
+  'titikmustikasari@perikananindonesia.co.id': { name: 'Titik Mustikasari', email: 'titikmustikasari@perikananindonesia.co.id', role: 'direksi', defaultPass: '12345678', posisi: 'Direksi', departemen: 'Direksi' },
+  'errintopardede@perikananindonesia.co.id': { name: 'Errinto Pardede', email: 'errintopardede@perikananindonesia.co.id', role: 'direksi', defaultPass: '12345678', posisi: 'Direksi', departemen: 'Direksi' },
 
   // --- 3. KANTOR CABANG (24 Kantor Cabang Daerah) ---
   'cabang@gmail.com': { name: 'Staff Cabang', email: 'cabang@gmail.com', role: 'cabang', defaultPass: '123123', posisi: 'Staff Cabang', departemen: 'Kantor Cabang' },
@@ -49,6 +49,8 @@ export const ALL_STANDARD_ACCOUNTS: { [email: string]: { name: string; email: st
   'makassar@perikananindonesia.co.id': { name: 'Cabang Makassar', email: 'makassar@perikananindonesia.co.id', role: 'cabang', defaultPass: '12345678', posisi: 'Kantor Cabang Makassar', departemen: 'Cabang Makassar' },
   'bengkayang@perikananindonesia.co.id': { name: 'Cabang Bengkayang', email: 'bengkayang@perikananindonesia.co.id', role: 'cabang', defaultPass: '12345678', posisi: 'Kantor Cabang Bengkayang', departemen: 'Cabang Bengkayang' },
   'tanjungpandan@perikananindonesia.co.id': { name: 'Cabang Tanjung Pandan', email: 'tanjungpandan@perikananindonesia.co.id', role: 'cabang', defaultPass: '12345678', posisi: 'Kantor Cabang Tanjung Pandan', departemen: 'Cabang Tanjung Pandan' },
+  'benoa@perikananindonesia.co.id': { name: 'Cabang Benoa', email: 'benoa@perikananindonesia.co.id', role: 'cabang', defaultPass: '12345678', posisi: 'Kantor Cabang Benoa', departemen: 'Cabang Benoa' },
+  'semeleu@perikananindonesia.co.id': { name: 'Cabang Semeleu', email: 'semeleu@perikananindonesia.co.id', role: 'cabang', defaultPass: '12345678', posisi: 'Kantor Cabang Semeleu', departemen: 'Cabang Semeleu' },
 };
 
 export async function POST(req: Request) {
