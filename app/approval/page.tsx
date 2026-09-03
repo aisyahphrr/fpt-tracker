@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { formatUserRoleLabel } from '@/lib/utils'
 import {
   ClipboardCheck,
   CheckCircle2,
@@ -87,7 +88,7 @@ export default function ApprovalPage() {
           const email = (d.email || '').toLowerCase()
           const isPusat = email.includes('nailah') || email.includes('ahlan') || d.role === 'admin'
           setUserRole(isPusat ? 'pusat' : 'cabang')
-          const roleLabel = d.role === 'direksi' ? 'Direksi' : isPusat ? 'Admin Pusat' : 'Staff Cabang'
+          const roleLabel = formatUserRoleLabel(d.role, d.name, d.email)
           setUserName(`${d.name} (${roleLabel})`)
         }
       }

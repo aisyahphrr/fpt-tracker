@@ -3,6 +3,8 @@
 import { Search, User, ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 
+import { formatUserRoleLabel } from '@/lib/utils'
+
 interface TopbarProps {
   userName?: string
   userRole?: string
@@ -24,13 +26,7 @@ export function Topbar({ userName = 'Admin User', userRole = 'admin' }: TopbarPr
   }
 
   const formatRole = (role: string, name: string) => {
-    const r = (role || '').toLowerCase()
-    const n = (name || '').toLowerCase()
-    if (r === 'admin' || n.includes('nailah')) return 'Admin Pusat'
-    if (n.includes('ahlan')) return 'Staff Pusat'
-    if (r === 'direksi' || n.includes('aisyah') || n.includes('titik') || n.includes('errin')) return 'Direksi'
-    if (r === 'cabang' || n.includes('cabang')) return 'Staff Cabang'
-    return role
+    return formatUserRoleLabel(role, name)
   }
 
   return (

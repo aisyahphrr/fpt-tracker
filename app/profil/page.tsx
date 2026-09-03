@@ -3,6 +3,7 @@
 import { MainLayout } from '@/components/layout/main-layout'
 import { User, Mail, Phone, MapPin, Briefcase, Calendar, Edit, Save, Lock, Key, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { formatUserRoleLabel } from '@/lib/utils'
 
 export default function ProfilPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -153,21 +154,7 @@ export default function ProfilPage() {
     }
   }
 
-  const getDisplayRole = (role: string, name: string, email: string) => {
-    const r = (role || '').toLowerCase()
-    const n = (name || '').toLowerCase()
-    const e = (email || '').toLowerCase()
-    if (r === 'admin' || n.includes('nailah') || e.includes('nailah')) return 'Admin Pusat'
-    if (n.includes('ahlan') || e.includes('ahlan')) return 'Staff Pusat'
-    if (r === 'direksi' || n.includes('aisyah') || n.includes('titik') || n.includes('errin') || e.includes('aisyah') || e.includes('titik') || e.includes('errin')) {
-      return 'Direksi'
-    }
-    if (r === 'cabang' || n.includes('cabang') || e.includes('cabang')) return 'Staff Cabang'
-    if (r === 'staff') return 'Staff Cabang'
-    return 'Direksi'
-  }
-
-  const displayRole = getDisplayRole(profile.role, profile.name, profile.email)
+  const displayRole = formatUserRoleLabel(profile.role, profile.name, profile.email)
 
   return (
     <MainLayout userName={profile.name} userEmail={profile.email}>

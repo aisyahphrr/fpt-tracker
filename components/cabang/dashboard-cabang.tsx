@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { formatUserRoleLabel } from '@/lib/utils'
 import {
   ShoppingCart,
   ShoppingBag,
@@ -70,9 +71,7 @@ export function DashboardCabang() {
       if (res.ok) {
         const data = await res.json()
         if (data?.name) {
-          const emailClean = (data.email || '').toLowerCase()
-          const isDireksi = data.role === 'direksi' || emailClean.includes('aisyah')
-          const roleLabel = isDireksi ? 'Direksi' : 'Staff Cabang'
+          const roleLabel = formatUserRoleLabel(data.role, data.name, data.email)
           setUserName(`${data.name.toUpperCase()} (${roleLabel})`)
         }
       }

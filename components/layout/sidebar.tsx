@@ -21,6 +21,7 @@ import {
   Shield,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { formatUserRoleLabel } from '@/lib/utils'
 
 interface SidebarProps {
   userRole?: string
@@ -223,7 +224,7 @@ export function Sidebar({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white truncate">{displayName}</p>
-              <p className="text-xs text-blue-200/80 truncate capitalize">{displayRole}</p>
+              <p className="text-xs text-blue-200/80 truncate">{formatUserRoleLabel(userRole, displayName, userEmail)}</p>
             </div>
           </div>
 
@@ -240,8 +241,7 @@ export function Sidebar({
   }
 
   // --- TAMPILAN SIDEBAR CABANG / DIREKSI (SESUAI PANDUAN REVISI CABANG) ---
-  const isDireksi = userRole === 'direksi' || userEmail?.toLowerCase().includes('aisyah') || userEmail?.toLowerCase().includes('titik') || userEmail?.toLowerCase().includes('errinto')
-  const displayRoleCabang = isDireksi ? 'Direksi' : 'Kantor Cabang'
+  const displayRoleCabang = formatUserRoleLabel(userRole, userName, userEmail)
 
   return (
     <aside key="cabang-sidebar" className="sidebar-container w-64 bg-[#0a192f] text-white flex flex-col justify-between select-none shadow-xl border-r border-[#1e293b]/50">

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { DAFTAR_CABANG } from '@/lib/constants/cabang'
+import { formatUserRoleLabel } from '@/lib/utils'
 import {
   Package,
   Building2,
@@ -336,7 +337,7 @@ export function StokCabang() {
       if (res.ok) {
         const d = await res.json()
         if (d?.name) {
-          const roleLabel = d.role === 'direksi' ? 'Direksi' : 'Staff Cabang'
+          const roleLabel = formatUserRoleLabel(d.role, d.name, d.email)
           setUserName(`${d.name} (${roleLabel})`)
         }
       }

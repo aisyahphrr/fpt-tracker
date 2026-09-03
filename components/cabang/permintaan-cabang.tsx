@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { formatUserRoleLabel } from '@/lib/utils'
 import {
   ShoppingCart,
   ShoppingBag,
@@ -578,7 +579,7 @@ export function PermintaanCabang() {
       if (res.ok) {
         const d = await res.json()
         if (d?.name) {
-          const roleLabel = d.role === 'direksi' ? 'Direksi' : 'Staff Cabang'
+          const roleLabel = formatUserRoleLabel(d.role, d.name, d.email)
           setUserName(`${d.name} (${roleLabel})`)
         }
       }
