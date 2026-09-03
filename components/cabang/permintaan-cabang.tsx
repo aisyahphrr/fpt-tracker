@@ -1210,7 +1210,21 @@ export function PermintaanCabang() {
                           {new Intl.NumberFormat('id-ID').format(row.qty)} kg
                         </td>
                         <td className="py-3 px-3 text-right whitespace-nowrap">
-                          {formatPrice(row.hargaBuyer)}
+                          {row.hargaBuyer > 0 ? (
+                            <div>
+                              <div className="font-bold text-slate-800">
+                                {formatPrice(row.qty > 0 ? Math.round(row.hargaBuyer / row.qty) : row.hargaBuyer)}
+                                <span className="text-[11px] font-semibold text-slate-500 ml-1">/ kg</span>
+                              </div>
+                              {row.qty > 1 && (
+                                <div className="text-[10px] text-slate-400 font-medium">
+                                  Total: {formatPrice(row.hargaBuyer)}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic font-medium">Not Available</span>
+                          )}
                         </td>
                         <td className="py-3 px-3 text-center whitespace-nowrap">
                           {row.statusStok === 'Stock' ? (
@@ -1566,8 +1580,14 @@ export function PermintaanCabang() {
                   <span className="font-bold text-slate-800">{new Intl.NumberFormat('id-ID').format(selectedItem.qty)} kg</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-400">Harga Buyer ({selectedCurrency}):</span>
-                  <span>{formatPrice(selectedItem.hargaBuyer)}</span>
+                  <span className="text-slate-400">Harga Satuan ({selectedCurrency}/kg):</span>
+                  <span className="font-bold text-slate-800">
+                    {formatPrice(selectedItem.qty > 0 ? Math.round(selectedItem.hargaBuyer / selectedItem.qty) : selectedItem.hargaBuyer)} / kg
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-50">
+                  <span className="text-slate-400">Total Transaksi ({selectedCurrency}):</span>
+                  <span className="font-extrabold text-blue-700">{formatPrice(selectedItem.hargaBuyer)}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-50">
                   <span className="text-slate-400">Status Stok:</span>
