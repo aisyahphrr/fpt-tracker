@@ -103,6 +103,9 @@ export default function ApprovalPage() {
       if (res.ok) {
         const json = await res.json()
         setData(json || [])
+        if (json && json.length > 0) {
+          setSelectedId((prev) => (prev && json.some((d: any) => d.id === prev) ? prev : json[0].id))
+        }
       }
     } catch (e) {
       console.error('Error fetching approval:', e)
@@ -587,56 +590,53 @@ export default function ApprovalPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {activeItem.sumberList.map((s, idx) => (
-                      <tr
-                        key={s.id}
-                        className={`hover:bg-blue-50/30 transition-colors ${
-                          s.selected ? 'bg-emerald-50/20' : ''
-                        }`}
-                      >
-                        <td className="py-3 px-3 text-center">
-                          <input
-                            type="checkbox"
-                            checked={s.selected}
-                            disabled={userRole !== 'pusat'}
-                            onChange={() => handleToggleSource(s.id)}
-                            className={`w-4 h-4 text-blue-600 rounded border-slate-300 ${
-                              userRole === 'pusat' ? 'cursor-pointer focus:ring-blue-500' : 'cursor-not-allowed opacity-80'
-                            }`}
-                            title={userRole === 'pusat' ? 'Klik untuk mengubah persetujuan sumber' : 'Hanya Kantor Pusat yang dapat mengubah persetujuan'}
-                          />
-                        </td>
-                        <td className="py-3 px-3 font-bold text-slate-800">
-                          <span className="text-slate-400 font-normal mr-1.5">{idx + 1}</span>
-                          {s.nama}
-                        </td>
-                        <td className="py-3 px-2 text-slate-600">{s.asal}</td>
-                        <td className="py-3 px-2 text-right font-bold text-slate-800">
-                          {new Intl.NumberFormat('id-ID').format(s.qty)} kg
-                        </td>
-                        <td className="py-3 px-2 text-right font-bold text-slate-800">
-                          {new Intl.NumberFormat('id-ID').format(s.harga)}
-                        </td>
-                        <td className="py-3 px-2 text-center whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                              s.selected
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-rose-50 text-rose-700 border-rose-200'
-                            }`}
-                          >
-                            {s.selected ? 'Disetujui' : 'Ditolak'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3">
-                          <div className="flex items-start justify-between gap-1 group">
-                            <div className="text-[11px] leading-tight">
-                              <p className="text-slate-700 font-medium">{s.notes || '—'}</p>
-                              {s.lastUpdated && (
-                                <p className="text-[10px] text-slate-400 mt-0.5">{s.lastUpdated}</p>
-                              )}
-                            </div>
-                            {userRole === 'pusat' && (
+                    {activeItem.sumberList && activeItem.sumberList.length > 0 ? (
+                      activeItem.sumberList.map((s, idx) => (
+                        <tr
+                          key={s.id}
+                          className={`hover:bg-blue-50/30 transition-colors ${
+                            s.selected ? 'bg-emerald-50/20' : ''
+                          }`}
+                        >
+                          <td className="py-3 px-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={s.selected}
+                              onChange={() => handleToggleSource(s.id)}
+                              className="w-4 h-4 text-blue-600 rounded border-slate-300 cursor-pointer focus:ring-blue-500"
+                              title="Klik untuk memilih sumber yang disetujui"
+                            />
+                          </td>
+                          <td className="py-3 px-3 font-bold text-slate-800">
+                            <span className="text-slate-400 font-normal mr-1.5">{idx + 1}</span>
+                            {s.nama}
+                          </td>
+                          <td className="py-3 px-2 text-slate-600">{s.asal}</td>
+                          <td className="py-3 px-2 text-right font-bold text-slate-800">
+                            {new Intl.NumberFormat('id-ID').format(s.qty)} kg
+                          </td>
+                          <td className="py-3 px-2 text-right font-bold text-slate-800">
+                            {new Intl.NumberFormat('id-ID').format(s.harga)}
+                          </td>
+                          <td className="py-3 px-2 text-center whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                s.selected
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200'
+                              }`}
+                            >
+                              {s.selected ? 'Disetujui' : 'Ditolak'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-start justify-between gap-1 group">
+                              <div className="text-[11px] leading-tight">
+                                <p className="text-slate-700 font-medium">{s.notes || '—'}</p>
+                                {s.lastUpdated && (
+                                  <p className="text-[10px] text-slate-400 mt-0.5">{s.lastUpdated}</p>
+                                )}
+                              </div>
                               <button
                                 onClick={() => {
                                   setEditingNoteSumber(s)
@@ -647,11 +647,20 @@ export default function ApprovalPage() {
                               >
                                 <Edit className="w-3 h-3" />
                               </button>
-                            )}
-                          </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-slate-400">
+                          <p className="font-semibold text-slate-600">Belum ada penawaran sumber dari cabang</p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            Data permintaan ini sudah masuk dan menunggu tim cabang mengisi sumber bahan baku di menu Bahan Baku.
+                          </p>
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>

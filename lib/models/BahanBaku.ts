@@ -11,6 +11,8 @@ const SumberSchema = new mongoose.Schema({
   hargaProses: { type: Number, default: 0 },
   hargaLogistik: { type: Number, default: 0 },
   harga: { type: Number, default: 0 }, // Harga Akhir per Kg = BB + Proses + Logistik
+  selected: { type: Boolean, default: false },
+  status: { type: String, default: 'Menunggu' }, // 'Menunggu' | 'Disetujui' | 'Ditolak'
   lampiran: { type: String, default: '' },
   catatan: { type: String, default: '' },
   lastUpdated: { type: String, default: '' },
@@ -26,6 +28,8 @@ const BahanBakuSchema = new mongoose.Schema(
     qty: { type: Number, default: 1 }, // Pusat legacy field
     qtyPermintaan: { type: Number, default: 1 },
     hargaBuyer: { type: Number, default: 0 },
+    incoterm: { type: String, default: 'FOB' },
+    status: { type: String, default: 'Menunggu' },
     sumber: [SumberSchema],
     filePerhitungan: { type: String, default: '' },
     linkFotoGdrive: { type: String, default: '' },

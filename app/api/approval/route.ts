@@ -242,7 +242,64 @@ const INITIAL_APPROVAL_DATA = [
 export async function GET() {
   try {
     await connectToDatabase();
-    return NextResponse.json(INITIAL_APPROVAL_DATA, { status: 200 });
+
+    const realBahanBaku = await BahanBaku.find().sort({ createdAt: -1 });
+
+    const dbItems: any[] = realBahanBaku.map((bb: any) => {
+      const mappedSumberList = (bb.sumber || []).map((s: any, sIdx: number) => {
+        const isApproved = s.status === 'Disetujui';
+        return {
+          id: s._id ? s._id.toString() : `s-${bb._id}-${sIdx}`,
+          nama: s.namaSumber || s.supplier || s.cabang || `Sumber ${sIdx + 1}`,
+          asal: s.cabang || s.supplier || 'Cabang',
+          qty: s.qty || 0,
+          harga: s.harga || s.hargaBahanBaku || 0,
+          selected: s.selected !== undefined ? s.selected : isApproved,
+          status: s.status || 'Menunggu',
+          notes: s.catatan || s.notes || 'Penawaran bahan baku dari cabang.',
+          lastUpdated: s.lastUpdated || (bb.lastUpdated ? `oleh ${bb.lastUpdated}` : 'Baru saja ditambahkan'),
+        };
+      });
+
+      // Compute overall status
+      let overallStatus: 'Menunggu' | 'Disetujui' | 'Ditolak' = bb.status || 'Menunggu';
+      if (!bb.status) {
+        const hasApproved = mappedSumberList.some((s: any) => s.status === 'Disetujui');
+        const allRejected = mappedSumberList.length > 0 && mappedSumberList.every((s: any) => s.status === 'Ditolak');
+        if (hasApproved) overallStatus = 'Disetujui';
+        else if (allRejected) overallStatus = 'Ditolak';
+        else overallStatus = 'Menunggu';
+      }
+
+      const rawDate = bb.createdAt ? new Date(bb.createdAt) : new Date();
+      const formattedDate = `${rawDate.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][rawDate.getMonth()]} ${rawDate.getFullYear()}`;
+
+      return {
+        id: bb._id.toString(),
+        noRequest: bb.noRequest || '',
+        buyer: bb.buyer || 'Buyer',
+        negara: bb.negara || 'Indonesia',
+        komoditas: bb.komoditas || bb.barang || 'Ikan',
+        qtyPermintaan: bb.qtyPermintaan || bb.qty || 1000,
+        incoterm: bb.incoterm || 'FOB',
+        hargaBuyerUSD: bb.hargaBuyerUSD || (bb.hargaBuyer ? Number((bb.hargaBuyer / 16200).toFixed(2)) : 0),
+        kursIDR: 16200,
+        tanggalRequest: formattedDate,
+        targetPengiriman: bb.targetPengiriman || 'Segera',
+        status: overallStatus,
+        sumberList: mappedSumberList,
+      };
+    });
+
+    // Merge with INITIAL_APPROVAL_DATA for demo seeds without duplicating existing buyers
+    const existingBuyerNames = new Set(dbItems.map((d) => d.buyer.toLowerCase().trim()));
+    const remainingInitial = INITIAL_APPROVAL_DATA.filter(
+      (init) => !existingBuyerNames.has(init.buyer.toLowerCase().trim())
+    );
+
+    const finalResult = [...dbItems, ...remainingInitial];
+
+    return NextResponse.json(finalResult, { status: 200 });
   } catch (error: any) {
     console.error('Error in approval GET:', error);
     return NextResponse.json(INITIAL_APPROVAL_DATA, { status: 200 });
@@ -255,15 +312,43 @@ export async function PUT(req: Request) {
     const body = await req.json();
     const { id, status, sumberList } = body;
 
+    // 1. Check if ID is a MongoDB ObjectId in BahanBaku
+    if (id && id.length === 24 && /^[0-9a-fA-F]{24}$/.test(id)) {
+      const bb: any = await BahanBaku.findById(id);
+      if (bb) {
+        if (status) bb.status = status;
+        if (sumberList && Array.isArray(sumberList) && bb.sumber) {
+          bb.sumber.forEach((s: any, idx: number) => {
+            const match = sumberList.find(
+              (sl: any) =>
+                sl.id === (s._id ? s._id.toString() : `s-${bb._id}-${idx}`) ||
+                sl.nama === s.namaSumber ||
+                sl.nama === s.supplier
+            );
+            if (match) {
+              s.status = match.status;
+              s.selected = match.selected;
+              if (match.notes) s.catatan = match.notes;
+            }
+          });
+          bb.markModified('sumber');
+        }
+        await bb.save();
+        return NextResponse.json({ message: 'Approval Bahan Baku berhasil disimpan ke database', data: bb }, { status: 200 });
+      }
+    }
+
+    // 2. Fallback to in-memory initial data for seed items
     const idx = INITIAL_APPROVAL_DATA.findIndex((d) => d.id === id);
     if (idx >= 0) {
       if (status) INITIAL_APPROVAL_DATA[idx].status = status;
       if (sumberList) INITIAL_APPROVAL_DATA[idx].sumberList = sumberList;
+      return NextResponse.json({ message: 'Approval berhasil diperbarui', data: INITIAL_APPROVAL_DATA[idx] }, { status: 200 });
     }
 
-    return NextResponse.json({ message: 'Approval berhasil diperbarui', data: INITIAL_APPROVAL_DATA[idx] }, { status: 200 });
+    return NextResponse.json({ message: 'Item berhasil diperbarui' }, { status: 200 });
   } catch (error: any) {
     console.error('Error updating approval:', error);
-    return NextResponse.json({ message: 'Terjadi kesalahan' }, { status: 500 });
+    return NextResponse.json({ message: 'Terjadi kesalahan saat memperbarui approval' }, { status: 500 });
   }
 }
