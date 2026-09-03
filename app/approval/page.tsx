@@ -65,7 +65,7 @@ export default function ApprovalPage() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const itemsPerPage = 10
 
   // Calculation Modal State
   const [isPerhitunganModalOpen, setIsPerhitunganModalOpen] = useState(false)
@@ -401,48 +401,106 @@ export default function ApprovalPage() {
             </div>
 
             {/* Table of Requests */}
-            <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
-                    <th className="py-2.5 px-3">Nama Buyer</th>
-                    <th className="py-2.5 px-3">Permintaan</th>
-                    <th className="py-2.5 px-3">Tanggal Request</th>
-                    <th className="py-2.5 px-2 text-center">Status</th>
-                    <th className="py-2.5 px-2 text-center w-10">Aksi</th>
+                  <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-bold text-[11px] uppercase tracking-wider">
+                    {!activeItem && <th className="py-3 px-3 text-center w-12">No</th>}
+                    <th className="py-3 px-4">Nama Buyer</th>
+                    <th className="py-3 px-4">Komoditas & Incoterm</th>
+                    <th className="py-3 px-4 text-right">Kuantitas</th>
+                    {!activeItem && <th className="py-3 px-4 text-right">Harga Diminta</th>}
+                    {!activeItem && <th className="py-3 px-4 text-center">Sumber Cabang</th>}
+                    <th className="py-3 px-4 text-center">Tanggal Request</th>
+                    <th className="py-3 px-3 text-center">Status</th>
+                    <th className="py-3 px-4 text-center w-28">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {paginatedList.length > 0 ? (
-                    paginatedList.map((item) => {
+                    paginatedList.map((item, index) => {
                       const isSelected = item.id === selectedId
+                      const globalIndex = (currentPage - 1) * itemsPerPage + index + 1
+                      const approvedCount = (item.sumberList || []).filter((s) => s.status === 'Disetujui').length
+                      const totalSumber = (item.sumberList || []).length
+
                       return (
                         <tr
                           key={item.id}
                           onClick={() => setSelectedId(item.id)}
                           className={`transition-colors cursor-pointer ${
-                            isSelected ? 'bg-blue-50/60 ring-1 ring-blue-500/20' : 'hover:bg-slate-50'
+                            isSelected
+                              ? 'bg-blue-50/80 ring-1 ring-blue-500/30'
+                              : index % 2 === 0
+                              ? 'bg-white hover:bg-slate-50/80'
+                              : 'bg-slate-50/30 hover:bg-slate-50/80'
                           }`}
                         >
-                          <td className="py-3 px-3">
-                            <p className="font-bold text-blue-600">{item.buyer}</p>
-                            <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                          {!activeItem && (
+                            <td className="py-3.5 px-3 text-center font-bold text-slate-400">
+                              {globalIndex}
+                            </td>
+                          )}
+                          <td className="py-3.5 px-4">
+                            <p className="font-bold text-blue-700 text-[13px]">{item.buyer}</p>
+                            <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5 font-medium">
                               <span>{getFlag(item.negara)}</span>
                               <span>{item.negara}</span>
                             </p>
                           </td>
-                          <td className="py-3 px-3">
-                            <p className="font-bold text-slate-800">{item.komoditas}</p>
-                            <p className="text-[11px] text-slate-500">
-                              {new Intl.NumberFormat('id-ID').format(item.qtyPermintaan)} kg <span className="font-semibold text-slate-700">{item.incoterm}</span>
-                            </p>
+                          <td className="py-3.5 px-4">
+                            <p className="font-bold text-slate-800 text-[12px]">{item.komoditas}</p>
+                            <span className="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-semibold">
+                              {item.incoterm || 'FOB'}
+                            </span>
                           </td>
-                          <td className="py-3 px-3 text-[11px] text-slate-500">
-                            {item.tanggalRequest}
+                          <td className="py-3.5 px-4 text-right">
+                            <span className="font-extrabold text-slate-800 text-[12px]">
+                              {new Intl.NumberFormat('id-ID').format(item.qtyPermintaan)}
+                            </span>{' '}
+                            <span className="text-slate-500 font-semibold text-[11px]">kg</span>
                           </td>
-                          <td className="py-3 px-2 text-center whitespace-nowrap">
+                          {!activeItem && (
+                            <td className="py-3.5 px-4 text-right">
+                              {item.hargaBuyerUSD > 0 ? (
+                                <div>
+                                  <p className="font-bold text-slate-800">
+                                    USD {item.hargaBuyerUSD.toFixed(2)} /kg
+                                  </p>
+                                  <p className="text-[10px] text-slate-400">
+                                    ≈ Rp {new Intl.NumberFormat('id-ID').format(Math.round(item.hargaBuyerUSD * (item.kursIDR || 16200)))} /kg
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic font-medium">Belum diisi</span>
+                              )}
+                            </td>
+                          )}
+                          {!activeItem && (
+                            <td className="py-3.5 px-4 text-center">
+                              {totalSumber > 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                  <span>{totalSumber} Sumber</span>
+                                  {approvedCount > 0 && (
+                                    <span className="text-emerald-600">({approvedCount} Disetujui)</span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500">
+                                  0 Sumber
+                                </span>
+                              )}
+                            </td>
+                          )}
+                          <td className="py-3.5 px-4 text-center text-slate-600 text-[11px] font-medium whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1 text-slate-500">
+                              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <span>{item.tanggalRequest}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-3 text-center whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${
                                 item.status === 'Disetujui'
                                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                   : item.status === 'Ditolak'
@@ -453,17 +511,20 @@ export default function ApprovalPage() {
                               {item.status}
                             </span>
                           </td>
-                          <td className="py-3 px-2 text-center">
+                          <td className="py-3.5 px-4 text-center">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setSelectedId(item.id)
                               }}
-                              className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                                isSelected ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'
+                              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                                isSelected
+                                  ? 'bg-blue-600 text-white shadow-blue-600/20'
+                                  : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80'
                               }`}
                             >
                               <Eye className="w-3.5 h-3.5" />
+                              <span>Evaluasi</span>
                             </button>
                           </td>
                         </tr>
@@ -471,8 +532,11 @@ export default function ApprovalPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-6 text-center text-slate-400">
-                        Tidak ada permintaan.
+                      <td colSpan={!activeItem ? 9 : 6} className="py-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center space-y-1">
+                          <p className="font-semibold text-slate-600 text-sm">Tidak ada data permintaan</p>
+                          <p className="text-xs text-slate-400">Silakan ubah filter atau kata kunci pencarian Anda.</p>
+                        </div>
                       </td>
                     </tr>
                   )}
