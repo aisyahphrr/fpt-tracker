@@ -164,6 +164,19 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
       return NextResponse.json({ message: 'Permintaan tidak ditemukan' }, { status: 404 });
     }
 
+    // Clean up associated BahanBaku record(s)
+    try {
+      const BahanBaku = (await import('@/lib/models/BahanBaku')).default;
+      await BahanBaku.deleteMany({
+        $or: [
+          { noRequest: deletedPermintaan.noRequest },
+          { buyer: deletedPermintaan.buyer }
+        ]
+      });
+    } catch (cleanErr) {
+      console.error('Error cleaning up associated BahanBaku:', cleanErr);
+    }
+
     return NextResponse.json({ message: 'Permintaan berhasil dihapus' }, { status: 200 });
   } catch (error: any) {
     console.error('Error deleting permintaan:', error);

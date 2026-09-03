@@ -475,6 +475,28 @@ export function PermintaanCabang() {
     }
   }
 
+  const handleDeletePermintaan = async (row: PermintaanRow) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus permintaan dari "${row.buyer}" (${row.komoditas})?`)) {
+      return
+    }
+
+    // Optimistic UI state update
+    setData((prev) => prev.filter((item) => item._id !== row._id))
+
+    // Persist to Backend API
+    try {
+      const rawId = row._id.includes('-') && row._id.length > 20 ? row._id.split('-')[0] : row._id
+      if (rawId && !rawId.startsWith('inq-')) {
+        await fetch(`/api/permintaan/${rawId}`, {
+          method: 'DELETE',
+        })
+      }
+      fetchRealData()
+    } catch (err) {
+      console.error('Error deleting Permintaan:', err)
+    }
+  }
+
   useEffect(() => {
     fetchProfile()
     fetchKursData()
@@ -1224,6 +1246,13 @@ export function PermintaanCabang() {
                               title="Lihat Detail Permintaan"
                             >
                               <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePermintaan(row)}
+                              className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Hapus Permintaan"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
