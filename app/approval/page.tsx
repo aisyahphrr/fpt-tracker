@@ -54,8 +54,8 @@ export default function ApprovalPage() {
   const [userName, setUserName] = useState('Aisyah (Direksi)')
   const [userRole, setUserRole] = useState<'pusat' | 'cabang'>('cabang')
 
-  // Selected item to display on the Right Panel
-  const [selectedId, setSelectedId] = useState<string | null>('appr-1')
+  // Selected item to display on the Right Panel (null by default to show full list)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // Search & Filter
   const [searchBuyer, setSearchBuyer] = useState('')
@@ -103,9 +103,6 @@ export default function ApprovalPage() {
       if (res.ok) {
         const json = await res.json()
         setData(json || [])
-        if (json && json.length > 0) {
-          setSelectedId((prev) => (prev && json.some((d: any) => d.id === prev) ? prev : json[0].id))
-        }
       }
     } catch (e) {
       console.error('Error fetching approval:', e)
