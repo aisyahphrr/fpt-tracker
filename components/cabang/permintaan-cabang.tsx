@@ -269,6 +269,32 @@ export function PermintaanCabang() {
     }
   }, [formData.hargaBuyer, formData.currencyBuyer, formData.priceUnit, formData.qty, rates.USD, rates.JPY])
 
+  const handleTogglePriceUnit = (newUnit: 'per_kg' | 'total') => {
+    if (newUnit === formData.priceUnit) return
+    const currentVal = parseFloat(formData.hargaBuyer) || 0
+    const qty = Number(formData.qty) || 1
+
+    if (currentVal > 0) {
+      if (newUnit === 'total') {
+        const newTotal = currentVal * qty
+        setFormData({
+          ...formData,
+          priceUnit: 'total',
+          hargaBuyer: formData.currencyBuyer === 'USD' ? newTotal.toFixed(2) : Math.round(newTotal).toString(),
+        })
+      } else {
+        const newPerKg = currentVal / qty
+        setFormData({
+          ...formData,
+          priceUnit: 'per_kg',
+          hargaBuyer: formData.currencyBuyer === 'USD' ? newPerKg.toFixed(2) : Math.round(newPerKg).toString(),
+        })
+      }
+    } else {
+      setFormData({ ...formData, priceUnit: newUnit })
+    }
+  }
+
   // Form State for Edit Permintaan (Nego Qty & Harga)
   const [editFormData, setEditFormData] = useState({
     id: '',
@@ -348,6 +374,32 @@ export function PermintaanCabang() {
       unit: editFormData.priceUnit,
     }
   }, [editFormData.hargaBuyer, editFormData.currencyBuyer, editFormData.priceUnit, editFormData.qty, rates.USD, rates.JPY])
+
+  const handleToggleEditPriceUnit = (newUnit: 'per_kg' | 'total') => {
+    if (newUnit === editFormData.priceUnit) return
+    const currentVal = parseFloat(editFormData.hargaBuyer) || 0
+    const qty = Number(editFormData.qty) || 1
+
+    if (currentVal > 0) {
+      if (newUnit === 'total') {
+        const newTotal = currentVal * qty
+        setEditFormData({
+          ...editFormData,
+          priceUnit: 'total',
+          hargaBuyer: editFormData.currencyBuyer === 'USD' ? newTotal.toFixed(2) : Math.round(newTotal).toString(),
+        })
+      } else {
+        const newPerKg = currentVal / qty
+        setEditFormData({
+          ...editFormData,
+          priceUnit: 'per_kg',
+          hargaBuyer: editFormData.currencyBuyer === 'USD' ? newPerKg.toFixed(2) : Math.round(newPerKg).toString(),
+        })
+      }
+    } else {
+      setEditFormData({ ...editFormData, priceUnit: newUnit })
+    }
+  }
 
   const handleOpenEdit = (row: PermintaanRow) => {
     setSelectedItem(row)
@@ -1414,7 +1466,7 @@ export function PermintaanCabang() {
                       <div className="inline-flex rounded-lg p-0.5 bg-slate-100 border border-slate-200 text-[11px]">
                         <button
                           type="button"
-                          onClick={() => setFormData({ ...formData, priceUnit: 'per_kg' })}
+                          onClick={() => handleTogglePriceUnit('per_kg')}
                           className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
                             formData.priceUnit === 'per_kg'
                               ? 'bg-white text-blue-600 shadow-xs'
@@ -1425,7 +1477,7 @@ export function PermintaanCabang() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setFormData({ ...formData, priceUnit: 'total' })}
+                          onClick={() => handleTogglePriceUnit('total')}
                           className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
                             formData.priceUnit === 'total'
                               ? 'bg-white text-blue-600 shadow-xs'
@@ -1467,27 +1519,74 @@ export function PermintaanCabang() {
 
                     {/* Real-time Currency Conversion Box */}
                     {calculatedPrices && (
-                      <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-[11px] space-y-0.5 text-emerald-900 animate-in fade-in duration-150">
-                        <div className="flex justify-between items-center font-bold">
-                          <span>Konversi IDR:</span>
-                          <span className="text-emerald-700 font-extrabold text-xs">
-                            Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.totalPriceIDR)} Total
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-slate-600">
-                          <span>Per kg:</span>
-                          <span className="font-semibold text-slate-800">
-                            {formData.currencyBuyer !== 'IDR' ? (
-                              <>
-                                {formData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
-                                {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrices.pricePerKgOriginal)}{' '}
-                                (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)}/kg)
-                              </>
-                            ) : (
-                              `Rp ${new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)}/kg`
-                            )}
-                          </span>
-                        </div>
+                      <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-[11px] space-y-1 text-emerald-900 animate-in fade-in duration-150">
+                        {formData.priceUnit === 'per_kg' ? (
+                          <>
+                            <div className="flex justify-between items-center font-bold">
+                              <span>Harga Satuan (/kg):</span>
+                              <span className="text-emerald-700 font-extrabold text-xs">
+                                {formData.currencyBuyer !== 'IDR' ? (
+                                  <>
+                                    {formData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
+                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrices.pricePerKgOriginal)} / kg
+                                    <span className="text-[10px] text-emerald-600 font-normal ml-1">
+                                      (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)}/kg)
+                                    </span>
+                                  </>
+                                ) : (
+                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)} / kg`
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-slate-600 pt-0.5 border-t border-emerald-200/50">
+                              <span>Total Estimasi Transaksi:</span>
+                              <span className="font-bold text-slate-800">
+                                {formData.currencyBuyer !== 'IDR' ? (
+                                  <>
+                                    {formData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
+                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrices.totalPriceOriginal)}{' '}
+                                    (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.totalPriceIDR)})
+                                  </>
+                                ) : (
+                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedPrices.totalPriceIDR)}`
+                                )}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex justify-between items-center font-bold">
+                              <span>Total Nilai Transaksi:</span>
+                              <span className="text-emerald-700 font-extrabold text-xs">
+                                {formData.currencyBuyer !== 'IDR' ? (
+                                  <>
+                                    {formData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
+                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrices.totalPriceOriginal)}{' '}
+                                    <span className="text-[10px] text-emerald-600 font-normal ml-1">
+                                      (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.totalPriceIDR)})
+                                    </span>
+                                  </>
+                                ) : (
+                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedPrices.totalPriceIDR)} Total`
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-slate-600 pt-0.5 border-t border-emerald-200/50">
+                              <span>Ekuivalen Satuan (/kg):</span>
+                              <span className="font-bold text-slate-800">
+                                {formData.currencyBuyer !== 'IDR' ? (
+                                  <>
+                                    {formData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
+                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrices.pricePerKgOriginal)} / kg{' '}
+                                    (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)}/kg)
+                                  </>
+                                ) : (
+                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)} / kg`
+                                )}
+                              </span>
+                            </div>
+                          </>
+                        )}
                         {formData.currencyBuyer !== 'IDR' && (
                           <p className="text-[10px] text-emerald-700/80 italic pt-0.5">
                             *Kurs: 1 {formData.currencyBuyer} = Rp{' '}
@@ -1781,7 +1880,7 @@ export function PermintaanCabang() {
                       <div className="inline-flex rounded-lg p-0.5 bg-slate-100 border border-slate-200 text-[11px]">
                         <button
                           type="button"
-                          onClick={() => setEditFormData({ ...editFormData, priceUnit: 'per_kg' })}
+                          onClick={() => handleToggleEditPriceUnit('per_kg')}
                           className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
                             editFormData.priceUnit === 'per_kg'
                               ? 'bg-white text-blue-600 shadow-xs'
@@ -1792,7 +1891,7 @@ export function PermintaanCabang() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setEditFormData({ ...editFormData, priceUnit: 'total' })}
+                          onClick={() => handleToggleEditPriceUnit('total')}
                           className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
                             editFormData.priceUnit === 'total'
                               ? 'bg-white text-blue-600 shadow-xs'
@@ -1834,27 +1933,74 @@ export function PermintaanCabang() {
 
                     {/* Real-time Currency Conversion Box */}
                     {calculatedEditPrices && (
-                      <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-[11px] space-y-0.5 text-emerald-900 animate-in fade-in duration-150">
-                        <div className="flex justify-between items-center font-bold">
-                          <span>Konversi IDR:</span>
-                          <span className="text-emerald-700 font-extrabold text-xs">
-                            Rp {new Intl.NumberFormat('id-ID').format(calculatedEditPrices.totalPriceIDR)} Total
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-slate-600">
-                          <span>Per kg:</span>
-                          <span className="font-semibold text-slate-800">
-                            {editFormData.currencyBuyer !== 'IDR' ? (
-                              <>
-                                {editFormData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
-                                {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedEditPrices.pricePerKgOriginal)}{' '}
-                                (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedEditPrices.pricePerKgIDR)}/kg)
-                              </>
-                            ) : (
-                              `Rp ${new Intl.NumberFormat('id-ID').format(calculatedEditPrices.pricePerKgIDR)}/kg`
-                            )}
-                          </span>
-                        </div>
+                      <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-[11px] space-y-1 text-emerald-900 animate-in fade-in duration-150">
+                        {editFormData.priceUnit === 'per_kg' ? (
+                          <>
+                            <div className="flex justify-between items-center font-bold">
+                              <span>Harga Satuan (/kg):</span>
+                              <span className="text-emerald-700 font-extrabold text-xs">
+                                {editFormData.currencyBuyer !== 'IDR' ? (
+                                  <>
+                                    {editFormData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
+                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedEditPrices.pricePerKgOriginal)} / kg
+                                    <span className="text-[10px] text-emerald-600 font-normal ml-1">
+                                      (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedEditPrices.pricePerKgIDR)}/kg)
+                                    </span>
+                                  </>
+                                ) : (
+                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedEditPrices.pricePerKgIDR)} / kg`
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-slate-600 pt-0.5 border-t border-emerald-200/50">
+                              <span>Total Estimasi Transaksi:</span>
+                              <span className="font-bold text-slate-800">
+                                {editFormData.currencyBuyer !== 'IDR' ? (
+                                  <>
+                                    {editFormData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
+                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedEditPrices.totalPriceOriginal)}{' '}
+                                    (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedEditPrices.totalPriceIDR)})
+                                  </>
+                                ) : (
+                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedEditPrices.totalPriceIDR)}`
+                                )}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex justify-between items-center font-bold">
+                              <span>Total Nilai Transaksi:</span>
+                              <span className="text-emerald-700 font-extrabold text-xs">
+                                {editFormData.currencyBuyer !== 'IDR' ? (
+                                  <>
+                                    {editFormData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
+                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedEditPrices.totalPriceOriginal)}{' '}
+                                    <span className="text-[10px] text-emerald-600 font-normal ml-1">
+                                      (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedEditPrices.totalPriceIDR)})
+                                    </span>
+                                  </>
+                                ) : (
+                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedEditPrices.totalPriceIDR)} Total`
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-slate-600 pt-0.5 border-t border-emerald-200/50">
+                              <span>Ekuivalen Satuan (/kg):</span>
+                              <span className="font-bold text-slate-800">
+                                {editFormData.currencyBuyer !== 'IDR' ? (
+                                  <>
+                                    {editFormData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
+                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedEditPrices.pricePerKgOriginal)} / kg{' '}
+                                    (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedEditPrices.pricePerKgIDR)}/kg)
+                                  </>
+                                ) : (
+                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedEditPrices.pricePerKgIDR)} / kg`
+                                )}
+                              </span>
+                            </div>
+                          </>
+                        )}
                         {editFormData.currencyBuyer !== 'IDR' && (
                           <p className="text-[10px] text-emerald-700/80 italic pt-0.5">
                             *Kurs: 1 {editFormData.currencyBuyer} = Rp{' '}
