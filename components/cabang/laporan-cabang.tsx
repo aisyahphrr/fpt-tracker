@@ -757,8 +757,8 @@ export function LaporanCabang() {
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                               row.persentaseSelisih.startsWith('+')
-                                ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
                             }`}
                           >
                             {row.persentaseSelisih}

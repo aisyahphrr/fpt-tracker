@@ -869,14 +869,14 @@ export default function ApprovalPage() {
                   </div>
                   <div className="flex justify-between border-t border-slate-200 pt-1">
                     <span className="text-slate-500">Selisih (Sumber - Buyer):</span>
-                    <span className="font-bold text-rose-600">
-                      Rp {new Intl.NumberFormat('id-ID').format(modalPerhitunganMetrics.selisihHarga)} /kg
+                    <span className={`font-bold ${modalPerhitunganMetrics.selisihHarga >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {modalPerhitunganMetrics.selisihHarga >= 0 ? '+' : ''}Rp {new Intl.NumberFormat('id-ID').format(modalPerhitunganMetrics.selisihHarga)} /kg
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Persentase Selisih:</span>
-                    <span className="font-bold text-rose-600">
-                      +{modalPerhitunganMetrics.persentaseSelisih}%
+                    <span className={`font-bold ${Number(modalPerhitunganMetrics.persentaseSelisih) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {Number(modalPerhitunganMetrics.persentaseSelisih) >= 0 ? '+' : ''}{modalPerhitunganMetrics.persentaseSelisih}%
                     </span>
                   </div>
                 </div>
