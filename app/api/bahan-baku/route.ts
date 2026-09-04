@@ -223,33 +223,56 @@ export async function PUT(req: Request) {
     let updated;
     if (newSumber) {
       // Append single new source
+      const cleanSumber = { ...newSumber };
+      if (!cleanSumber._id) {
+        cleanSumber._id = `src-${Date.now()}`;
+      }
+
       updated = await BahanBaku.findByIdAndUpdate(
         id,
         {
-          $push: { sumber: newSumber },
+          $push: { sumber: cleanSumber },
           $set: { lastUpdated: nowStr },
         },
-        { new: true }
+        { new: true, runValidators: false }
       );
     } else {
       // Update full sumber list
+      const cleanSumberList = Array.isArray(sumber) ? sumber : [];
       updated = await BahanBaku.findByIdAndUpdate(
         id,
         {
           $set: {
-            sumber,
-            filePerhitungan,
+            sumber: cleanSumberList,
+            ...(filePerhitungan !== undefined ? { filePerhitungan } : {}),
             lastUpdated: nowStr,
           },
         },
-        { new: true }
+        { new: true, runValidators: false }
       );
+    }
+
+    if (!updated) {
+      // Fallback by noRequest or buyer
+      const bb = await BahanBaku.findOne({ $or: [{ noRequest: id }, { buyer: id }] });
+      if (bb) {
+        if (newSumber) {
+          bb.sumber.push(newSumber);
+          bb.lastUpdated = nowStr;
+        } else if (sumber) {
+          bb.sumber = sumber;
+          bb.lastUpdated = nowStr;
+        }
+        await bb.save();
+        return NextResponse.json({ message: 'Sumber bahan baku berhasil diperbarui', data: bb }, { status: 200 });
+      }
+      return NextResponse.json({ message: 'Data bahan baku tidak ditemukan' }, { status: 404 });
     }
 
     return NextResponse.json({ message: 'Sumber bahan baku berhasil diperbarui', data: updated }, { status: 200 });
   } catch (error: any) {
     console.error('Error updating bahan baku:', error);
-    return NextResponse.json({ message: 'Terjadi kesalahan saat memperbarui data' }, { status: 500 });
+    return NextResponse.json({ message: error.message || 'Terjadi kesalahan saat memperbarui data' }, { status: 500 });
   }
 }
 

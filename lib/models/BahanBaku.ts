@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const SumberSchema = new mongoose.Schema({
+  _id: { type: mongoose.Schema.Types.Mixed, default: () => new mongoose.Types.ObjectId() },
   namaSumber: { type: String, default: '' },
   cabang: { type: String, default: '' },
   supplier: { type: String, default: '' },
@@ -16,7 +17,7 @@ const SumberSchema = new mongoose.Schema({
   lampiran: { type: String, default: '' },
   catatan: { type: String, default: '' },
   lastUpdated: { type: String, default: '' },
-});
+}, { _id: false });
 
 const BahanBakuSchema = new mongoose.Schema(
   {

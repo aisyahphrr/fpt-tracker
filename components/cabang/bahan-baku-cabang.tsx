@@ -365,7 +365,7 @@ export function BahanBakuCabang() {
 
     // Sync to Backend via PUT /api/bahan-baku
     try {
-      await fetch('/api/bahan-baku', {
+      const res = await fetch('/api/bahan-baku', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -373,6 +373,12 @@ export function BahanBakuCabang() {
           newSumber: newSumberObj,
         }),
       })
+      if (res.ok) {
+        await fetchBahanBakuData()
+      } else {
+        const errJson = await res.json()
+        console.error('Error saving new sumber:', errJson)
+      }
     } catch (err) {
       console.error('Error saving new sumber to database:', err)
     }
@@ -397,7 +403,7 @@ export function BahanBakuCabang() {
 
     // Save to Backend
     try {
-      await fetch('/api/bahan-baku', {
+      const res = await fetch('/api/bahan-baku', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -405,6 +411,9 @@ export function BahanBakuCabang() {
           sumber: newSumberList,
         }),
       })
+      if (res.ok) {
+        await fetchBahanBakuData()
+      }
     } catch (err) {
       console.error('Error deleting sumber:', err)
     }
@@ -1005,6 +1014,7 @@ export function BahanBakuCabang() {
                       onClick={() => {
                         setIsAddSumberModalOpen(false)
                         setShowSuccessAdded(false)
+                        fetchBahanBakuData()
                       }}
                       className="px-6 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-xs hover:bg-blue-700 cursor-pointer"
                     >
