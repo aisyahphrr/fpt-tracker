@@ -767,60 +767,61 @@ export function BahanBakuCabang() {
 
         {/* 3. MODAL FORM TAMBAH SUMBER (TRIGGER DARI TOMBOL +) */}
         {isAddSumberModalOpen && selectedBahanBaku && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in duration-200 my-8">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in duration-200 my-8">
               {!showSuccessAdded ? (
                 <>
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
                     <div>
-                      <h3 className="text-base font-bold text-slate-800">
-                        Tambah Sumber — {selectedBahanBaku.komoditas} ({selectedBahanBaku.buyer})
+                      <h3 className="text-lg font-bold text-slate-800">
+                        Tambah Sumber — <span className="text-blue-600">{selectedBahanBaku.komoditas}</span>
                       </h3>
-                      <p className="text-xs text-slate-500">
-                        Input penawaran sumber bahan baku untuk permintaan ini
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Input penawaran sumber bahan baku untuk memenuhi permintaan {selectedBahanBaku.buyer}
                       </p>
                     </div>
                     <button
                       onClick={() => setIsAddSumberModalOpen(false)}
-                      className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+                      className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
                     >
                       <X className="w-5 h-5" />
                     </button>
                   </div>
 
                   {/* Header Summary Box */}
-                  <div className="grid grid-cols-4 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 text-xs text-slate-600">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">BUYER</span>
-                      <span className="font-bold text-slate-800 truncate block">{selectedBahanBaku.buyer}</span>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Buyer</span>
+                      <span className="font-bold text-slate-800 block text-sm mt-0.5">{selectedBahanBaku.buyer}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">NEGARA / TUJUAN</span>
-                      <span className="font-semibold text-slate-800 truncate block">{selectedBahanBaku.negara}</span>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Negara / Tujuan</span>
+                      <span className="font-semibold text-slate-700 block text-sm mt-0.5">{selectedBahanBaku.negara || '—'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">KOMODITAS</span>
-                      <span className="font-bold text-blue-600 truncate block">{selectedBahanBaku.komoditas}</span>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Komoditas</span>
+                      <span className="font-bold text-blue-600 block text-sm mt-0.5">{selectedBahanBaku.komoditas}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">QTY PERMINTAAN</span>
-                      <span className="font-bold text-slate-800 truncate block">
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Qty Permintaan</span>
+                      <span className="font-bold text-slate-800 block text-sm mt-0.5">
                         {new Intl.NumberFormat('id-ID').format(selectedBahanBaku.qtyPermintaan)} kg
                       </span>
                     </div>
                   </div>
 
-                  <form onSubmit={handleSubmitSumber} className="space-y-3 text-xs">
-                    <div className="grid grid-cols-2 gap-3">
+                  <form onSubmit={handleSubmitSumber} className="space-y-4 text-xs">
+                    {/* Baris 1: Cabang & Qty */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <div>
-                        <label className="block font-bold text-slate-700 mb-1">
+                        <label className="block font-bold text-slate-700 mb-1.5">
                           Cabang / Lokasi <span className="text-rose-500">*</span>
                         </label>
                         <select
                           required
                           value={formSumber.cabang}
                           onChange={(e) => setFormSumber({ ...formSumber, cabang: e.target.value })}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer transition-all"
                         >
                           {DAFTAR_CABANG.map((c) => (
                             <option key={c} value={c}>{c}</option>
@@ -829,7 +830,7 @@ export function BahanBakuCabang() {
                       </div>
 
                       <div>
-                        <label className="block font-bold text-slate-700 mb-1">
+                        <label className="block font-bold text-slate-700 mb-1.5">
                           Qty Tersedia (kg) <span className="text-rose-500">*</span>
                         </label>
                         <input
@@ -839,27 +840,28 @@ export function BahanBakuCabang() {
                           placeholder="Contoh: 2000"
                           value={formSumber.qty}
                           onChange={(e) => setFormSumber({ ...formSumber, qty: e.target.value })}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold transition-all"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Baris 2: Supplier & Spesifikasi */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <div>
-                        <label className="block font-bold text-slate-700 mb-1">
+                        <label className="block font-bold text-slate-700 mb-1.5">
                           Supplier <span className="font-normal text-slate-400">(Opsional)</span>
                         </label>
                         <input
                           type="text"
-                          placeholder="Pilih / input supplier..."
+                          placeholder="Nama supplier / nelayan..."
                           value={formSumber.supplier}
                           onChange={(e) => setFormSumber({ ...formSumber, supplier: e.target.value })}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium transition-all"
                         />
                       </div>
 
                       <div>
-                        <label className="block font-bold text-slate-700 mb-1">
+                        <label className="block font-bold text-slate-700 mb-1.5">
                           Spesifikasi <span className="font-normal text-slate-400">(Opsional)</span>
                         </label>
                         <input
@@ -867,109 +869,118 @@ export function BahanBakuCabang() {
                           placeholder="Size, grade, kondisi, dll."
                           value={formSumber.spesifikasi}
                           onChange={(e) => setFormSumber({ ...formSumber, spesifikasi: e.target.value })}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium transition-all"
                         />
                       </div>
                     </div>
 
-                    {/* 4 KOLOM HARGA: Bahan Baku + Proses + Logistik = Harga Akhir */}
-                    <div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {/* Baris 3: STRUKTUR HARGA PENAWARAN */}
+                    <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                          Rincian Harga (IDR / kg)
+                        </span>
+                        <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                          Rumus: BB + Proses + Logistik
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 items-end">
                         <div>
-                          <label className="block font-bold text-slate-700 mb-1">
-                            Harga Bahan Baku <span className="font-normal text-slate-400">(IDR/kg)</span>
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                            Harga BB
                           </label>
                           <input
                             type="number"
                             placeholder="Rp / kg"
                             value={formSumber.hargaBahanBaku}
                             onChange={(e) => setFormSumber({ ...formSumber, hargaBahanBaku: e.target.value })}
-                            className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs"
                           />
                         </div>
 
                         <div>
-                          <label className="block font-bold text-slate-700 mb-1">
-                            Harga Proses <span className="font-normal text-slate-400">(IDR/kg)</span>
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                            Harga Proses
                           </label>
                           <input
                             type="number"
                             placeholder="Rp / kg"
                             value={formSumber.hargaProses}
                             onChange={(e) => setFormSumber({ ...formSumber, hargaProses: e.target.value })}
-                            className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs"
                           />
                         </div>
 
                         <div>
-                          <label className="block font-bold text-slate-700 mb-1">
-                            Harga Logistik <span className="font-normal text-slate-400">(IDR/kg)</span>
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                            Harga Logistik
                           </label>
                           <input
                             type="number"
                             placeholder="Rp / kg"
                             value={formSumber.hargaLogistik}
                             onChange={(e) => setFormSumber({ ...formSumber, hargaLogistik: e.target.value })}
-                            className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs"
                           />
                         </div>
 
                         <div>
-                          <label className="block font-bold text-slate-700 mb-1">
-                            Harga Akhir <span className="font-normal text-slate-400">(IDR/kg)</span>
+                          <label className="block text-[11px] font-bold text-blue-900 mb-1">
+                            Harga Akhir
                           </label>
-                          <div className="w-full px-2.5 py-2 bg-blue-50 border border-blue-200 rounded-xl font-extrabold text-blue-700 truncate flex items-center h-[38px] text-xs">
+                          <div className="w-full px-3 py-2 bg-blue-600 border border-blue-600 rounded-lg font-bold text-white text-center flex items-center justify-center h-[34px] text-xs shadow-xs truncate">
                             {liveHargaAkhir > 0
-                              ? `Rp ${new Intl.NumberFormat('id-ID').format(liveHargaAkhir)}`
-                              : 'Otomatis terhitung'}
+                              ? `Rp ${new Intl.NumberFormat('id-ID').format(liveHargaAkhir)}/kg`
+                              : 'Rp 0 / kg'}
                           </div>
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-1.5 italic">
-                        💡 Rumus: Harga Akhir = Harga Bahan Baku + Harga Proses + Harga Logistik
-                      </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Baris 4: Lampiran & Catatan */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <div>
-                        <label className="block font-bold text-slate-700 mb-1">
+                        <label className="block font-bold text-slate-700 mb-1.5">
                           Lampiran Perhitungan <span className="font-normal text-slate-400">(Opsional)</span>
                         </label>
-                        <div className="border border-dashed border-slate-300 rounded-xl p-2.5 text-center bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition-colors">
-                          <Upload className="w-4 h-4 mx-auto text-slate-400 mb-1" />
-                          <p className="text-[10px] text-slate-500 font-medium">Upload Excel atau PDF (Max. 10 MB)</p>
+                        <div className="border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50 hover:bg-slate-100/80 cursor-pointer transition-colors flex flex-col items-center justify-center h-20">
+                          <Upload className="w-4 h-4 text-slate-400 mb-1" />
+                          <p className="text-[11px] text-slate-600 font-semibold">Upload Excel atau PDF</p>
+                          <p className="text-[9px] text-slate-400">Maksimal ukuran file 10 MB</p>
                         </div>
                       </div>
 
                       <div>
-                        <label className="block font-bold text-slate-700 mb-1">
+                        <label className="block font-bold text-slate-700 mb-1.5">
                           Catatan <span className="font-normal text-slate-400">(Opsional)</span>
                         </label>
                         <textarea
-                          rows={2}
-                          placeholder="Masukkan catatan..."
+                          rows={3}
+                          placeholder="Tambahkan catatan atau keterangan pengiriman..."
                           value={formSumber.catatan}
                           onChange={(e) => setFormSumber({ ...formSumber, catatan: e.target.value })}
-                          className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 text-xs"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 text-xs h-20 resize-none transition-all"
                         />
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                      <p className="text-[11px] text-slate-400">
-                        <span className="text-rose-500">*</span> Wajib diisi
+                    {/* Modal Footer Buttons */}
+                    <div className="flex items-center justify-between pt-3.5 border-t border-slate-100">
+                      <p className="text-[11px] text-slate-400 font-medium">
+                        <span className="text-rose-500 font-bold">*</span> Wajib diisi
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
                         <button
                           type="button"
                           onClick={() => setIsAddSumberModalOpen(false)}
-                          className="px-4 py-2 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
+                          className="px-4 py-2 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer transition-colors"
                         >
                           Batal
                         </button>
                         <button
                           type="submit"
-                          className="px-5 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer"
+                          className="px-5 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer transition-all hover:shadow-sm"
                         >
                           Simpan Sumber
                         </button>
