@@ -27,20 +27,7 @@ const INITIAL_BARANG_SEED = [
 export async function GET() {
   try {
     await connectToDatabase();
-    let barangs = await Barang.find({}).sort({ createdAt: -1 });
-
-    // Seed or clean if empty, contains non-fish items, or has outdated branch names
-    if (
-      barangs.length === 0 ||
-      barangs.some(b => b.nama?.toLowerCase().includes('buku') || b.nama?.toLowerCase().includes('kertas') || b.cabang?.includes('(Kamal)') || b.cabang === 'Manado' || b.cabang === 'Ternate')
-    ) {
-      await Barang.deleteMany({});
-      for (const item of INITIAL_BARANG_SEED) {
-        await Barang.create(item);
-      }
-      barangs = await Barang.find({}).sort({ createdAt: -1 });
-    }
-
+    const barangs = await Barang.find({}).sort({ createdAt: -1 });
     return NextResponse.json(barangs, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching barang:', error);

@@ -160,7 +160,7 @@ const INITIAL_CABANG_PERMINTAAN: PermintaanRow[] = [
 ]
 
 export function PermintaanCabang() {
-  const [data, setData] = useState<PermintaanRow[]>(INITIAL_CABANG_PERMINTAAN)
+  const [data, setData] = useState<PermintaanRow[]>([])
   const [barangList, setBarangList] = useState<any[]>([])
   const [bahanBakuList, setBahanBakuList] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -611,64 +611,68 @@ export function PermintaanCabang() {
 
       if (resP.ok) {
         const rawPermintaan = await resP.json()
-        if (rawPermintaan && rawPermintaan.length > 0) {
-          const flatRows: PermintaanRow[] = []
-          rawPermintaan.forEach((p: any) => {
-            if (p.items && p.items.length > 0) {
-              p.items.forEach((it: any, idx: number) => {
-                // Determine automatic stock availability
-                const komoditasName = it.name || p.komoditas || 'Ikan'
-                const inBarang = realBarang.some((b) =>
-                  b.nama?.toLowerCase().includes(komoditasName.toLowerCase())
-                )
-                const inBahanBaku = realBahanBaku.some((bb) =>
-                  (bb.komoditas || bb.barang || '')
-                    ?.toLowerCase()
-                    .includes(komoditasName.toLowerCase()) && (bb.sumber?.length || 0) > 0
-                )
+        if (Array.isArray(rawPermintaan)) {
+          if (rawPermintaan.length === 0) {
+            setData([])
+          } else {
+            const flatRows: PermintaanRow[] = []
+            rawPermintaan.forEach((p: any) => {
+              if (p.items && p.items.length > 0) {
+                p.items.forEach((it: any, idx: number) => {
+                  // Determine automatic stock availability
+                  const komoditasName = it.name || p.komoditas || 'Ikan'
+                  const inBarang = realBarang.some((b) =>
+                    b.nama?.toLowerCase().includes(komoditasName.toLowerCase())
+                  )
+                  const inBahanBaku = realBahanBaku.some((bb) =>
+                    (bb.komoditas || bb.barang || '')
+                      ?.toLowerCase()
+                      .includes(komoditasName.toLowerCase()) && (bb.sumber?.length || 0) > 0
+                  )
 
-                const autoStatus = (p.statusStok === 'Stock' || p.statusStok === 'Non-Stock') 
-                  ? p.statusStok 
-                  : (inBarang || inBahanBaku ? 'Stock' : 'Non-Stock')
+                  const autoStatus = (p.statusStok === 'Stock' || p.statusStok === 'Non-Stock') 
+                    ? p.statusStok 
+                    : (inBarang || inBahanBaku ? 'Stock' : 'Non-Stock')
 
+                  flatRows.push({
+                    _id: `${p._id}-${idx}`,
+                    noRequest: p.noRequest || `INQ-2026-${String(flatRows.length + 1).padStart(3, '0')}`,
+                    tanggal: p.tanggal || '13/08/2026',
+                    buyer: p.buyer || 'Buyer',
+                    negara: p.negara || 'Vietnam',
+                    tujuan: p.tujuan || p.negara || 'Vietnam',
+                    komoditas: komoditasName,
+                    spesifikasi: it.spesifikasi || it.size || 'Grade A',
+                    size: it.size || '',
+                    qty: it.qty || p.totalQty || 1000,
+                    hargaBuyer: it.harga || p.hargaBuyer || 0,
+                    statusStok: autoStatus,
+                    lastUpdated: p.lastUpdated || 'Hari ini oleh Staff',
+                    catatan: p.catatan || '',
+                    fileQuotation: p.fileQuotation || '',
+                  })
+                })
+              } else {
                 flatRows.push({
-                  _id: `${p._id}-${idx}`,
-                  noRequest: p.noRequest || `INQ-2026-${String(flatRows.length + 1).padStart(3, '0')}`,
+                  _id: p._id,
+                  noRequest: p.noRequest || `INQ-2026-001`,
                   tanggal: p.tanggal || '13/08/2026',
                   buyer: p.buyer || 'Buyer',
                   negara: p.negara || 'Vietnam',
                   tujuan: p.tujuan || p.negara || 'Vietnam',
-                  komoditas: komoditasName,
-                  spesifikasi: it.spesifikasi || it.size || 'Grade A',
-                  size: it.size || '',
-                  qty: it.qty || p.totalQty || 1000,
-                  hargaBuyer: it.harga || p.hargaBuyer || 0,
-                  statusStok: autoStatus,
+                  komoditas: p.komoditas || 'Cakalang',
+                  spesifikasi: p.spesifikasi || 'Grade A',
+                  qty: p.totalQty || p.qty || 1000,
+                  hargaBuyer: p.hargaBuyer || 0,
+                  statusStok: p.statusStok || 'Stock',
                   lastUpdated: p.lastUpdated || 'Hari ini oleh Staff',
                   catatan: p.catatan || '',
                   fileQuotation: p.fileQuotation || '',
                 })
-              })
-            } else {
-              flatRows.push({
-                _id: p._id,
-                noRequest: p.noRequest || `INQ-2026-001`,
-                tanggal: p.tanggal || '13/08/2026',
-                buyer: p.buyer || 'Buyer',
-                negara: p.negara || 'Vietnam',
-                tujuan: p.tujuan || p.negara || 'Vietnam',
-                komoditas: p.komoditas || 'Cakalang',
-                spesifikasi: p.spesifikasi || 'Grade A',
-                qty: p.totalQty || p.qty || 1000,
-                hargaBuyer: p.hargaBuyer || 0,
-                statusStok: p.statusStok || 'Stock',
-                lastUpdated: p.lastUpdated || 'Hari ini oleh Staff',
-                catatan: p.catatan || '',
-                fileQuotation: p.fileQuotation || '',
-              })
-            }
-          })
-          setData(flatRows)
+              }
+            })
+            setData(flatRows)
+          }
         }
       }
     } catch (e) {

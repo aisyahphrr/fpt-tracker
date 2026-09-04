@@ -105,16 +105,7 @@ const INITIAL_SUPPLIERS = [
 export async function GET() {
   try {
     await connectToDatabase();
-    let suppliers = await Supplier.find({}).sort({ createdAt: -1 });
-
-    // Seed if empty
-    if (suppliers.length === 0) {
-      for (const s of INITIAL_SUPPLIERS) {
-        await Supplier.create(s);
-      }
-      suppliers = await Supplier.find({}).sort({ createdAt: -1 });
-    }
-
+    const suppliers = await Supplier.find({}).sort({ createdAt: -1 });
     return NextResponse.json(suppliers, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching suppliers:', error);

@@ -172,17 +172,7 @@ const INITIAL_PERMINTAAN: Array<{
 export async function GET() {
   try {
     await connectToDatabase();
-    let permintaan = await Permintaan.find({}).sort({ createdAt: -1 });
-
-    // Seed or update if old incomplete records exist
-    if (permintaan.length === 0 || permintaan.some(p => !p.items || p.items.length === 0 || p.items[0]?.harga === 0 && p.buyer === 'Ba Hai JSC')) {
-      await Permintaan.deleteMany({});
-      for (const item of INITIAL_PERMINTAAN) {
-        await Permintaan.create(item);
-      }
-      permintaan = await Permintaan.find({}).sort({ createdAt: -1 });
-    }
-
+    const permintaan = await Permintaan.find({}).sort({ createdAt: -1 });
     return NextResponse.json(permintaan, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching permintaan:', error);

@@ -291,18 +291,10 @@ export async function GET() {
       };
     });
 
-    // Merge with INITIAL_APPROVAL_DATA for demo seeds without duplicating existing buyers
-    const existingBuyerNames = new Set(dbItems.map((d) => d.buyer.toLowerCase().trim()));
-    const remainingInitial = INITIAL_APPROVAL_DATA.filter(
-      (init) => !existingBuyerNames.has(init.buyer.toLowerCase().trim())
-    );
-
-    const finalResult = [...dbItems, ...remainingInitial];
-
-    return NextResponse.json(finalResult, { status: 200 });
+    return NextResponse.json(dbItems, { status: 200 });
   } catch (error: any) {
     console.error('Error in approval GET:', error);
-    return NextResponse.json(INITIAL_APPROVAL_DATA, { status: 200 });
+    return NextResponse.json([], { status: 200 });
   }
 }
 

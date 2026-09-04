@@ -202,7 +202,7 @@ const INITIAL_STOK_GUDANG: StokItemRow[] = [
 ]
 
 export function StokCabang() {
-  const [data, setData] = useState<StokItemRow[]>(INITIAL_STOK_GUDANG)
+  const [data, setData] = useState<StokItemRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [userName, setUserName] = useState('AISYAH (Direksi)')
   const [headerLastUpdated, setHeaderLastUpdated] = useState('Last Updated: 1 Sep 2026, 21:30 WIB')
@@ -352,19 +352,23 @@ export function StokCabang() {
       const res = await fetch('/api/barang')
       if (res.ok) {
         const items = await res.json()
-        if (Array.isArray(items) && items.length > 0) {
-          const rows: StokItemRow[] = items.map((b: any, idx: number) => ({
-            _id: b._id || `item-${idx}`,
-            komoditas: b.nama || 'Ikan Laut',
-            spesifikasi: b.kategori || 'Grade A',
-            cabang: b.cabang || 'Jakarta',
-            qtyAvailable: typeof b.stokAwal === 'number' ? b.stokAwal : 0,
-            satuan: b.satuan || 'kg',
-            lastUpdated: b.lastUpdated || 'Baru saja',
-          }))
-          setData(rows)
-          if (rows.length > 0 && !updateForm.komoditas) {
-            setUpdateForm((prev) => ({ ...prev, komoditas: rows[0].komoditas }))
+        if (Array.isArray(items)) {
+          if (items.length === 0) {
+            setData([])
+          } else {
+            const rows: StokItemRow[] = items.map((b: any, idx: number) => ({
+              _id: b._id || `item-${idx}`,
+              komoditas: b.nama || 'Ikan Laut',
+              spesifikasi: b.kategori || 'Grade A',
+              cabang: b.cabang || 'Jakarta',
+              qtyAvailable: typeof b.stokAwal === 'number' ? b.stokAwal : 0,
+              satuan: b.satuan || 'kg',
+              lastUpdated: b.lastUpdated || 'Baru saja',
+            }))
+            setData(rows)
+            if (rows.length > 0 && !updateForm.komoditas) {
+              setUpdateForm((prev) => ({ ...prev, komoditas: rows[0].komoditas }))
+            }
           }
         }
       }

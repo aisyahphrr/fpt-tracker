@@ -131,14 +131,6 @@ export async function GET() {
     await connectToDatabase();
     let bahanBaku = await BahanBaku.find({}).sort({ createdAt: -1 });
 
-    // Seed initial records if collection is empty
-    if (bahanBaku.length === 0) {
-      for (const item of INITIAL_BAHAN_BAKU) {
-        await BahanBaku.create(item);
-      }
-      bahanBaku = await BahanBaku.find({}).sort({ createdAt: -1 });
-    }
-
     // Auto-sync any Permintaan Buyer records that are not yet in BahanBaku
     try {
       const allPermintaan = await Permintaan.find({});
