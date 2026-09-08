@@ -24,16 +24,22 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       })
 
-      const data = await res.json()
+      const contentType = res.headers.get('content-type') || ''
+      let data: any = {}
+      if (contentType.includes('application/json')) {
+        data = await res.json()
+      } else {
+        throw new Error(`Server tidak merespons dalam format JSON (Status: ${res.status}). Silakan muat ulang halaman atau periksa server.`)
+      }
 
       if (!res.ok) {
-        throw new Error(data.message || 'Login gagal')
+        throw new Error(data.message || 'Login gagal. Silakan periksa email dan password Anda.')
       }
 
       // Redirect to dashboard on success
       window.location.href = '/dashboard'
     } catch (err: any) {
-      setError(err.message)
+      setError(err.message || 'Terjadi kesalahan saat login')
     } finally {
       setIsLoading(false)
     }

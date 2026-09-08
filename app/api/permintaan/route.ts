@@ -48,96 +48,120 @@ const INITIAL_PERMINTAAN: Array<{
 }> = [
   {
     noRequest: 'INQ-2026-001',
-    tanggal: '13/08/2026',
-    buyer: 'Ba Hai JSC',
-    negara: 'Vietnam',
-    tujuan: 'Ho Chi Minh Port, Vietnam',
+    tanggal: '04/09/2026',
+    buyer: 'Ocean Trading Co.Ltd',
+    negara: 'Korea Selatan',
+    tujuan: 'Busan Port, Korea',
     jumlahItem: 1,
     totalQty: 25000,
     status: 'pending',
     statusStok: 'Stock',
-    lastUpdated: '30/08/2026 oleh Nailah (Pusat)',
+    lastUpdated: '04/09/2026 oleh Nailah (Admin Pusat)',
     items: [
-      { name: 'Cakalang', spesifikasi: '2 kg up, FOB, Grade A', size: '2 kg up', qty: 25000, harga: 405000000 }
+      { name: 'Cuttlefish', spesifikasi: 'Whole Clean, FOB, Packing : 4.5kg / 5kg', size: '100 - 200 g', qty: 5000, harga: 125000 },
+      { name: 'Cuttlefish', spesifikasi: 'Whole Clean, FOB, Packing : 4.5kg / 5kg', size: '200 - 300 g', qty: 8000, harga: 130000 },
+      { name: 'Cuttlefish', spesifikasi: 'Whole Clean, FOB, Packing : 4.5kg / 5kg', size: '300 - 500 g', qty: 7000, harga: 135000 },
+      { name: 'Cuttlefish', spesifikasi: 'Whole Clean, FOB, Packing : 4.5kg / 5kg', size: '500 g Up', qty: 5000, harga: 140000 }
     ]
   },
   {
     noRequest: 'INQ-2026-002',
-    tanggal: '13/08/2026',
-    buyer: 'Ba Hai JSC',
-    negara: 'Vietnam',
-    tujuan: 'Ho Chi Minh Port, Vietnam',
+    tanggal: '01/09/2026',
+    buyer: 'MMP International Co.Ltd',
+    negara: 'Thailand',
+    tujuan: 'Bangkok Port, Thailand',
     jumlahItem: 1,
     totalQty: 25000,
     status: 'pending',
-    statusStok: 'Non-Stock',
-    lastUpdated: '30/08/2026 oleh Roberto (Pusat)',
+    statusStok: 'Stock',
+    lastUpdated: '01/09/2026 oleh Nailah (Admin Pusat)',
     items: [
-      { name: 'Tuna', spesifikasi: '10 kg up, FOB, Mix grade', size: '10 kg up', qty: 25000, harga: 405000000 }
+      { name: 'Skipjack Tuna', spesifikasi: 'Grade A', size: '1 - 2 kg', qty: 10000, harga: 27540 },
+      { name: 'Skipjack Tuna', spesifikasi: 'Grade A', size: '2 - 4 kg', qty: 10000, harga: 29160 },
+      { name: 'Skipjack Tuna', spesifikasi: 'Grade A', size: '4 kg up', qty: 5000, harga: 30780 }
     ]
   },
   {
     noRequest: 'INQ-2026-003',
-    tanggal: '12/08/2026',
-    buyer: 'Siam Food Corp.',
-    negara: 'Thailand',
-    tujuan: 'Bangkok Port, Thailand',
+    tanggal: '28/08/2026',
+    buyer: 'Siam Canadian',
+    negara: 'China',
+    tujuan: 'Guangzhou Port, China',
     jumlahItem: 1,
     totalQty: 10000,
     status: 'pending',
     statusStok: 'Stock',
-    lastUpdated: '29/08/2026 oleh Tami (Pusat)',
+    lastUpdated: '28/08/2026 oleh Tami (Pusat)',
     items: [
-      { name: 'Udang Vanamei', spesifikasi: 'PD 31/40, IQF', size: '31/40', qty: 10000, harga: 162000000 }
+      { name: 'Squid', spesifikasi: 'Tube & Tentacles, Semi-IQF', size: 'U5', qty: 4000, harga: 34020 },
+      { name: 'Squid', spesifikasi: 'Tube & Tentacles, Semi-IQF', size: 'U7', qty: 6000, harga: 34020 }
     ]
   },
   {
     noRequest: 'INQ-2026-004',
-    tanggal: '11/08/2026',
-    buyer: 'Alief IKE',
-    negara: 'Jepang',
-    tujuan: 'Tokyo Port, Japan',
+    tanggal: '27/08/2026',
+    buyer: 'Saigon Blue Ocean JSC',
+    negara: 'Vietnam',
+    tujuan: 'Da Nang, Vietnam',
     jumlahItem: 1,
-    totalQty: 3000,
+    totalQty: 30000,
     status: 'pending',
     statusStok: 'Stock',
-    lastUpdated: '29/08/2026 oleh Nailah (Pusat)',
+    lastUpdated: '27/08/2026 oleh Nailah (Admin Pusat)',
     items: [
-      { name: 'Octopus', spesifikasi: '1-2 kg/pc, Frozen', size: '1-2 kg/pc', qty: 3000, harga: 109620000 }
+      { name: 'Yellowfin Tuna', spesifikasi: 'Saku AAA, CO Treated', size: '10 kg up', qty: 15000, harga: 45360 },
+      { name: 'Yellowfin Tuna', spesifikasi: 'Saku AAA, CO Treated', size: '20 kg up', qty: 15000, harga: 50220 }
     ]
   },
   {
     noRequest: 'INQ-2026-005',
-    tanggal: '10/08/2026',
-    buyer: 'Trang Thuy Seafood',
+    tanggal: '25/08/2026',
+    buyer: 'Hong Ly Seafood',
     negara: 'Vietnam',
-    tujuan: 'Da Nang Port, Vietnam',
+    tujuan: 'Ho Chi Minh Port, Vietnam',
     jumlahItem: 1,
-    totalQty: 15000,
+    totalQty: 20000,
     status: 'pending',
     statusStok: 'Stock',
-    lastUpdated: '28/08/2026 oleh Roberto (Pusat)',
+    lastUpdated: '25/08/2026 oleh Roberto (Pusat)',
     items: [
-      { name: 'Tuna (YFT)', spesifikasi: '5 kg up, FOB, Grade A', size: '5 kg up', qty: 15000, harga: 243000000 }
+      { name: 'Squid', spesifikasi: 'Ring & Tentacles, IQF', size: 'Cleaned Size A', qty: 10000, harga: 32400 },
+      { name: 'Squid', spesifikasi: 'Ring & Tentacles, IQF', size: 'Cleaned Size B', qty: 10000, harga: 40500 }
     ]
   },
   {
     noRequest: 'INQ-2026-006',
-    tanggal: '09/08/2026',
-    buyer: 'PT Indomar Seafood',
-    negara: 'Indonesia',
-    tujuan: 'Tanjung Priok, Indonesia',
+    tanggal: '20/08/2026',
+    buyer: 'Alief IKE',
+    negara: 'Yunani',
+    tujuan: 'Athens Port, Greece',
     jumlahItem: 1,
-    totalQty: 8000,
+    totalQty: 5000,
     status: 'pending',
-    statusStok: 'Non-Stock',
-    lastUpdated: '28/08/2026 oleh Nailah (Pusat)',
+    statusStok: 'Stock',
+    lastUpdated: '20/08/2026 oleh Nailah (Admin Pusat)',
     items: [
-      { name: 'Cumi-Cumi', spesifikasi: 'U3, IQF, Cleaned', size: 'U3', qty: 8000, harga: 128000000 }
+      { name: 'Octopus', spesifikasi: '1-2 kg/pc, Frozen Ball', size: '1 - 2 kg', qty: 5000, harga: 97200 }
     ]
   },
   {
     noRequest: 'INQ-2026-007',
+    tanggal: '18/08/2026',
+    buyer: 'Trang Thuy Seafood',
+    negara: 'Vietnam',
+    tujuan: 'Da Nang, Vietnam',
+    jumlahItem: 1,
+    totalQty: 15000,
+    status: 'pending',
+    statusStok: 'Stock',
+    lastUpdated: '18/08/2026 oleh Tami (Pusat)',
+    items: [
+      { name: 'Yellowfin Tuna', spesifikasi: 'Loin IVP, Grade A', size: '2 - 3 kg', qty: 8000, harga: 37260 },
+      { name: 'Yellowfin Tuna', spesifikasi: 'Loin IVP, Grade A', size: '3 - 5 kg', qty: 7000, harga: 45360 }
+    ]
+  },
+  {
+    noRequest: 'INQ-2026-008',
     tanggal: '08/08/2026',
     buyer: 'Pacific Harvest Ltd.',
     negara: 'Korea Selatan',
@@ -213,7 +237,11 @@ export async function POST(req: Request) {
     const sanitizedItems = items.map((item: any) => ({
       ...item,
       barangId: (item.barangId && item.barangId !== '') ? item.barangId : undefined,
-      harga: Number(item.harga) || 0
+      harga: Number(item.harga) || 0,
+      sizes: Array.isArray(item.sizes) ? item.sizes : [],
+      hargaMin: Number(item.hargaMin) || 0,
+      hargaMax: Number(item.hargaMax) || 0,
+      currency: item.currency || 'USD',
     }));
 
     const jumlahItem = sanitizedItems.length;
@@ -246,6 +274,8 @@ export async function POST(req: Request) {
         komoditas: item.name,
         qtyPermintaan: item.qty || 1,
         hargaBuyer: item.hargaBuyerPerKg || (Number(item.qty) > 0 && Number(item.harga) > 100000 ? Math.round(Number(item.harga) / Number(item.qty)) : Number(item.harga)) || 0,
+        allowedSizes: item.sizes || [],
+        targetBuyer: item.targetBuyer || (item.currency ? `${item.currency} ${item.harga || ''}` : ''),
         sumber: [], // Baru masuk dari Permintaan Buyer, belum ada sumber bahan baku
         lastUpdated: nowStr,
       });

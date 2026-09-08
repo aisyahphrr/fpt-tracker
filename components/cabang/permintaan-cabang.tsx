@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { formatUserRoleLabel } from '@/lib/utils'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import {
   ShoppingCart,
   ShoppingBag,
@@ -22,10 +24,19 @@ import {
   HelpCircle,
   Pencil,
   ChevronDown,
+  ChevronUp,
   FileText,
+  Download,
 } from 'lucide-react'
 
-interface PermintaanRow {
+export interface PermintaanSizeItem {
+  size: string
+  qty: number
+  harga: number
+  currency: 'IDR' | 'USD' | 'JPY'
+}
+
+export interface PermintaanRow {
   _id: string
   noRequest: string
   tanggal: string
@@ -37,6 +48,10 @@ interface PermintaanRow {
   size?: string
   qty: number
   hargaBuyer: number // in base IDR, 0 = Not Available
+  hargaMin?: number
+  hargaMax?: number
+  currencyBuyer?: 'USD' | 'IDR' | 'JPY'
+  sizes?: PermintaanSizeItem[]
   statusStok: 'Stock' | 'Non-Stock'
   lastUpdated: string
   catatan?: string
@@ -48,114 +63,141 @@ const INITIAL_CABANG_PERMINTAAN: PermintaanRow[] = [
   {
     _id: 'inq-1',
     noRequest: 'INQ-2026-001',
-    tanggal: '13/08/2026',
-    buyer: 'Ba Hai JSC',
-    negara: 'Vietnam',
-    tujuan: 'Ho Chi Minh Port, Vietnam',
-    komoditas: 'Cakalang',
-    spesifikasi: '2 kg up, FOB, Grade A',
+    tanggal: '04/09/2026',
+    buyer: 'Ocean Trading Co.Ltd',
+    negara: 'Korea Selatan',
+    tujuan: 'Busan, Korea',
+    komoditas: 'Cuttlefish',
+    spesifikasi: 'Whole Clean, FOB, Packing : 4.5kg or 5.0kg x 2 blocks, Grade A',
     qty: 25000,
-    hargaBuyer: 405000000,
+    hargaBuyer: 3312500000,
+    hargaMin: 125000,
+    hargaMax: 140000,
+    currencyBuyer: 'IDR',
+    sizes: [
+      { size: '100 - 200 g', qty: 5000, harga: 125000, currency: 'IDR' },
+      { size: '200 - 300 g', qty: 8000, harga: 130000, currency: 'IDR' },
+      { size: '300 - 500 g', qty: 7000, harga: 135000, currency: 'IDR' },
+      { size: '500 g Up', qty: 5000, harga: 140000, currency: 'IDR' },
+    ],
     statusStok: 'Stock',
-    lastUpdated: '30/08/2026 oleh Nailah (Pusat)',
+    lastUpdated: '04/09/2026 oleh Nailah (Admin Pusat)',
   },
   {
     _id: 'inq-2',
     noRequest: 'INQ-2026-002',
-    tanggal: '13/08/2026',
-    buyer: 'Ba Hai JSC',
-    negara: 'Vietnam',
-    tujuan: 'Ho Chi Minh Port, Vietnam',
-    komoditas: 'Tuna',
-    spesifikasi: '10 kg up, FOB, Mix grade',
+    tanggal: '01/09/2026',
+    buyer: 'MMP International Co.Ltd',
+    negara: 'Thailand',
+    tujuan: 'Bangkok, Thailand',
+    komoditas: 'Skipjack Tuna',
+    spesifikasi: 'Grade A, Whole Round, Frozen',
     qty: 25000,
-    hargaBuyer: 405000000,
-    statusStok: 'Non-Stock',
-    lastUpdated: '30/08/2026 oleh Roberto (Pusat)',
+    hargaBuyer: 729000000,
+    hargaMin: 27540,
+    hargaMax: 30780,
+    currencyBuyer: 'USD',
+    sizes: [
+      { size: '1 - 2 kg', qty: 10000, harga: 1.70, currency: 'USD' },
+      { size: '2 - 4 kg', qty: 10000, harga: 1.80, currency: 'USD' },
+      { size: '4 kg up', qty: 5000, harga: 1.90, currency: 'USD' },
+    ],
+    statusStok: 'Stock',
+    lastUpdated: '01/09/2026 oleh Nailah (Admin Pusat)',
   },
   {
     _id: 'inq-3',
     noRequest: 'INQ-2026-003',
-    tanggal: '12/08/2026',
-    buyer: 'Siam Food Corp.',
-    negara: 'Thailand',
-    tujuan: 'Bangkok Port, Thailand',
-    komoditas: 'Udang Vanamei',
-    spesifikasi: 'PD 31/40, IQF',
+    tanggal: '28/08/2026',
+    buyer: 'Siam Canadian',
+    negara: 'China',
+    tujuan: 'Guangzhou Port, China',
+    komoditas: 'Squid',
+    spesifikasi: 'Tube & Tentacles, Semi-IQF',
     qty: 10000,
-    hargaBuyer: 162000000,
+    hargaBuyer: 340200000,
+    currencyBuyer: 'USD',
+    sizes: [
+      { size: 'U5', qty: 4000, harga: 2.10, currency: 'USD' },
+      { size: 'U7', qty: 6000, harga: 2.10, currency: 'USD' },
+    ],
     statusStok: 'Stock',
-    lastUpdated: '29/08/2026 oleh Tami (Pusat)',
+    lastUpdated: '28/08/2026 oleh Tami (Pusat)',
   },
   {
     _id: 'inq-4',
     noRequest: 'INQ-2026-004',
-    tanggal: '11/08/2026',
-    buyer: 'Alief IKE',
-    negara: 'Jepang',
-    tujuan: 'Tokyo Port, Japan',
-    komoditas: 'Octopus',
-    spesifikasi: '1-2 kg/pc, Frozen',
-    qty: 3000,
-    hargaBuyer: 109620000,
+    tanggal: '27/08/2026',
+    buyer: 'Saigon Blue Ocean JSC',
+    negara: 'Vietnam',
+    tujuan: 'Da Nang, Vietnam',
+    komoditas: 'Yellowfin Tuna',
+    spesifikasi: 'Saku AAA, CO Treated',
+    qty: 30000,
+    hargaBuyer: 1433700000,
+    currencyBuyer: 'USD',
+    sizes: [
+      { size: '10 kg up', qty: 15000, harga: 2.80, currency: 'USD' },
+      { size: '20 kg up', qty: 15000, harga: 3.10, currency: 'USD' },
+    ],
     statusStok: 'Stock',
-    lastUpdated: '29/08/2026 oleh Nailah (Pusat)',
+    lastUpdated: '27/08/2026 oleh Nailah (Admin Pusat)',
   },
   {
     _id: 'inq-5',
     noRequest: 'INQ-2026-005',
-    tanggal: '10/08/2026',
-    buyer: 'Trang Thuy Seafood',
+    tanggal: '25/08/2026',
+    buyer: 'Hong Ly Seafood',
     negara: 'Vietnam',
-    tujuan: 'Da Nang Port, Vietnam',
-    komoditas: 'Tuna (YFT)',
-    spesifikasi: '5 kg up, FOB, Grade A',
-    qty: 15000,
-    hargaBuyer: 243000000,
+    tujuan: 'Ho Chi Minh Port, Vietnam',
+    komoditas: 'Squid',
+    spesifikasi: 'Ring & Tentacles, IQF',
+    qty: 20000,
+    hargaBuyer: 729000000,
+    currencyBuyer: 'USD',
+    sizes: [
+      { size: 'Cleaned Size A', qty: 10000, harga: 2.00, currency: 'USD' },
+      { size: 'Cleaned Size B', qty: 10000, harga: 2.50, currency: 'USD' },
+    ],
     statusStok: 'Stock',
-    lastUpdated: '28/08/2026 oleh Roberto (Pusat)',
+    lastUpdated: '25/08/2026 oleh Roberto (Pusat)',
   },
   {
     _id: 'inq-6',
     noRequest: 'INQ-2026-006',
-    tanggal: '09/08/2026',
-    buyer: 'PT Indomar Seafood',
-    negara: 'Indonesia',
-    tujuan: 'Tanjung Priok, Indonesia',
-    komoditas: 'Cumi-Cumi',
-    spesifikasi: 'U3, IQF, Cleaned',
-    qty: 8000,
-    hargaBuyer: 128000000,
-    statusStok: 'Non-Stock',
-    lastUpdated: '28/08/2026 oleh Nailah (Pusat)',
+    tanggal: '20/08/2026',
+    buyer: 'Alief IKE',
+    negara: 'Yunani',
+    tujuan: 'Athens Port, Greece',
+    komoditas: 'Octopus',
+    spesifikasi: '1-2 kg/pc, Frozen Ball',
+    qty: 5000,
+    hargaBuyer: 486000000,
+    currencyBuyer: 'USD',
+    sizes: [
+      { size: '1 - 2 kg', qty: 5000, harga: 6.00, currency: 'USD' },
+    ],
+    statusStok: 'Stock',
+    lastUpdated: '20/08/2026 oleh Nailah (Admin Pusat)',
   },
   {
     _id: 'inq-7',
     noRequest: 'INQ-2026-007',
-    tanggal: '08/08/2026',
-    buyer: 'Pacific Harvest Ltd.',
-    negara: 'Korea Selatan',
-    tujuan: 'Busan Port, South Korea',
-    komoditas: 'Mackerel',
-    spesifikasi: '200-300 g/pc, IQF',
-    qty: 12000,
-    hargaBuyer: 194400000,
+    tanggal: '18/08/2026',
+    buyer: 'Trang Thuy Seafood',
+    negara: 'Vietnam',
+    tujuan: 'Da Nang, Vietnam',
+    komoditas: 'Yellowfin Tuna',
+    spesifikasi: 'Loin IVP, Grade A',
+    qty: 15000,
+    hargaBuyer: 619650000,
+    currencyBuyer: 'USD',
+    sizes: [
+      { size: '2 - 3 kg', qty: 8000, harga: 2.30, currency: 'USD' },
+      { size: '3 - 5 kg', qty: 7000, harga: 2.80, currency: 'USD' },
+    ],
     statusStok: 'Stock',
-    lastUpdated: '27/08/2026 oleh Tami (Pusat)',
-  },
-  {
-    _id: 'inq-8',
-    noRequest: 'INQ-2026-008',
-    tanggal: '07/08/2026',
-    buyer: 'Sakamoto Co. Ltd',
-    negara: 'Jepang',
-    tujuan: 'Osaka Port, Japan',
-    komoditas: 'Chirimen',
-    spesifikasi: 'Kering, Grade A, 1-2 cm',
-    qty: 5000,
-    hargaBuyer: 0, // Not Available demo
-    statusStok: 'Stock',
-    lastUpdated: '26/08/2026 oleh Aisyah (Direksi)',
+    lastUpdated: '18/08/2026 oleh Tami (Pusat)',
   },
 ]
 
@@ -163,6 +205,7 @@ export function PermintaanCabang() {
   const [data, setData] = useState<PermintaanRow[]>([])
   const [barangList, setBarangList] = useState<any[]>([])
   const [bahanBakuList, setBahanBakuList] = useState<any[]>([])
+  const [supplierList, setSupplierList] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [userName, setUserName] = useState('Aisyah (Direksi)')
 
@@ -192,11 +235,15 @@ export function PermintaanCabang() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<PermintaanRow | null>(null)
 
+  // Size Detail Modal State
+  const [isDetailSizeModalOpen, setIsDetailSizeModalOpen] = useState(false)
+  const [selectedDetailItem, setSelectedDetailItem] = useState<PermintaanRow | null>(null)
+
   // Form State for Add / Edit
   const [formData, setFormData] = useState({
     tanggal: new Date().toISOString().split('T')[0],
     buyer: '',
-    negara: 'Vietnam',
+    negara: '',
     tujuan: '',
     komoditas: '',
     spesifikasi: '',
@@ -206,6 +253,117 @@ export function PermintaanCabang() {
     hargaBuyer: '', // String to allow empty / Not Available
     catatan: '',
   })
+
+  // Size breakdown rows in Add Modal
+  const [sizeRows, setSizeRows] = useState<Array<{ size: string; qty: string; currency: 'IDR' | 'USD' | 'JPY'; harga: string }>>([
+    { size: '100 - 200 g', qty: '', currency: 'IDR', harga: '' },
+    { size: '200 - 300 g', qty: '', currency: 'IDR', harga: '' },
+    { size: '300 - 500 g', qty: '', currency: 'IDR', harga: '' },
+    { size: '500 g Up', qty: '', currency: 'IDR', harga: '' },
+  ])
+  const [qtyBelumDibagi, setQtyBelumDibagi] = useState(false)
+  const [singleQty, setSingleQty] = useState('')
+  const [singleHarga, setSingleHarga] = useState('')
+  const [singleCurrency, setSingleCurrency] = useState<'IDR' | 'USD' | 'JPY'>('IDR')
+
+  // Dynamic size metrics calculation
+  const sizeMetrics = useMemo(() => {
+    if (qtyBelumDibagi) {
+      const q = Number(singleQty) || 0
+      const h = Number(singleHarga) || 0
+      const curr = singleCurrency
+      const formatH = (v: number) => curr === 'USD' ? `USD ${v.toFixed(2)}` : curr === 'JPY' ? `¥ ${v}` : `Rp ${new Intl.NumberFormat('id-ID').format(v)}`
+      return {
+        totalQty: q,
+        minHarga: h,
+        maxHarga: h,
+        avgHarga: h,
+        currency: curr,
+        rangeText: h > 0 ? `${formatH(h)} / kg` : '—',
+      }
+    }
+
+    let totalQ = 0
+    const validPrices: number[] = []
+    let sumWeighted = 0
+
+    sizeRows.forEach((r) => {
+      const q = Number(r.qty) || 0
+      const h = Number(r.harga) || 0
+      totalQ += q
+      if (h > 0) {
+        validPrices.push(h)
+        sumWeighted += (q > 0 ? q * h : h)
+      }
+    })
+
+    const minH = validPrices.length > 0 ? Math.min(...validPrices) : 0
+    const maxH = validPrices.length > 0 ? Math.max(...validPrices) : 0
+    const avgH = totalQ > 0 ? Math.round(sumWeighted / totalQ) : (validPrices.length > 0 ? Math.round(validPrices.reduce((a, b) => a + b, 0) / validPrices.length) : 0)
+    const curr = sizeRows[0]?.currency || 'IDR'
+
+    const formatH = (val: number) => curr === 'USD' ? `USD ${val.toFixed(2)}` : curr === 'JPY' ? `¥ ${val}` : `Rp ${new Intl.NumberFormat('id-ID').format(val)}`
+
+    let rangeText = '—'
+    if (minH > 0 && maxH > 0) {
+      if (minH === maxH) {
+        rangeText = `${formatH(minH)} / kg`
+      } else {
+        rangeText = `${formatH(minH)} - ${formatH(maxH)} / kg (Rata-rata: ${formatH(avgH)} / kg)`
+      }
+    }
+
+    return { totalQty: totalQ, minHarga: minH, maxHarga: maxH, avgHarga: avgH, currency: curr, rangeText }
+  }, [sizeRows, qtyBelumDibagi, singleQty, singleHarga, singleCurrency])
+
+  const handleAddSizeRow = () => {
+    setSizeRows((prev) => [
+      ...prev,
+      { size: '', qty: '', currency: prev[0]?.currency || 'IDR', harga: '' },
+    ])
+  }
+
+  const handleRemoveSizeRow = (idx: number) => {
+    setSizeRows((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  const handleUpdateSizeRow = (idx: number, field: string, val: any) => {
+    setSizeRows((prev) =>
+      prev.map((r, i) => (i === idx ? { ...r, [field]: val } : r))
+    )
+  }
+
+  const handleDownloadDetailPDF = (item: PermintaanRow) => {
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('DETAIL PERMINTAAN BUYER', 14, 20)
+    doc.setFontSize(10)
+    doc.text(`Buyer: ${item.buyer}`, 14, 28)
+    doc.text(`Negara / Tujuan: ${item.negara}`, 14, 34)
+    doc.text(`Tanggal: ${item.tanggal}`, 14, 40)
+    doc.text(`Komoditas: ${item.komoditas}`, 14, 46)
+    doc.text(`Spesifikasi: ${item.spesifikasi || '-'}`, 14, 52)
+    doc.text(`Total Qty: ${new Intl.NumberFormat('id-ID').format(item.qty)} kg`, 14, 58)
+
+    const tableBody = (item.sizes || []).map((s, idx) => [
+      idx + 1,
+      s.size,
+      `${new Intl.NumberFormat('id-ID').format(s.qty)} kg`,
+      s.currency === 'USD' ? `USD ${s.harga.toFixed(2)}` : `Rp ${new Intl.NumberFormat('id-ID').format(s.harga)}`,
+      s.currency
+    ])
+
+    autoTable(doc, {
+      startY: 66,
+      head: [['No', 'Size', 'Qty (kg)', 'Harga Buyer', 'Mata Uang']],
+      body: tableBody,
+      foot: [['Total', '', `${new Intl.NumberFormat('id-ID').format(item.qty)} kg`, '', '']],
+      theme: 'grid',
+      headStyles: { fillColor: [37, 99, 235] },
+    })
+
+    doc.save(`Permintaan_${item.buyer.replace(/\s+/g, '_')}_${item.komoditas}.pdf`)
+  }
 
   // Real-time calculation and currency conversion
   const calculatedPrices = useMemo(() => {
@@ -591,14 +749,16 @@ export function PermintaanCabang() {
   const fetchRealData = async () => {
     try {
       setIsLoading(true)
-      const [resP, resB, resBarang] = await Promise.all([
+      const [resP, resB, resBarang, resSupplier] = await Promise.all([
         fetch('/api/permintaan'),
         fetch('/api/bahan-baku'),
         fetch('/api/barang'),
+        fetch('/api/supplier'),
       ])
 
       let realBarang: any[] = []
       let realBahanBaku: any[] = []
+      let realSupplier: any[] = []
 
       if (resBarang.ok) {
         realBarang = await resBarang.json()
@@ -607,6 +767,10 @@ export function PermintaanCabang() {
       if (resB.ok) {
         realBahanBaku = await resB.json()
         setBahanBakuList(realBahanBaku || [])
+      }
+      if (resSupplier.ok) {
+        realSupplier = await resSupplier.json()
+        setSupplierList(realSupplier || [])
       }
 
       if (resP.ok) {
@@ -619,28 +783,32 @@ export function PermintaanCabang() {
             rawPermintaan.forEach((p: any) => {
               if (p.items && p.items.length > 0) {
                 p.items.forEach((it: any, idx: number) => {
-                  // Determine automatic stock availability
-                  const komoditasName = it.name || p.komoditas || 'Ikan'
-                  const inBarang = realBarang.some((b) =>
-                    b.nama?.toLowerCase().includes(komoditasName.toLowerCase())
-                  )
-                  const inBahanBaku = realBahanBaku.some((bb) =>
-                    (bb.komoditas || bb.barang || '')
-                      ?.toLowerCase()
-                      .includes(komoditasName.toLowerCase()) && (bb.sumber?.length || 0) > 0
-                  )
+                  // Determine automatic stock availability from Barang, Bahan Baku, or Supplier
+                  const komoditasName = (it.name || p.komoditas || 'Ikan').trim()
+                  const kLower = komoditasName.toLowerCase()
 
-                  const autoStatus = (p.statusStok === 'Stock' || p.statusStok === 'Non-Stock') 
-                    ? p.statusStok 
-                    : (inBarang || inBahanBaku ? 'Stock' : 'Non-Stock')
+                  const inBarang = realBarang.some((b) => {
+                    const bNama = (b.nama || '').toLowerCase().trim()
+                    return bNama && (bNama.includes(kLower) || kLower.includes(bNama))
+                  })
+                  const inBahanBaku = realBahanBaku.some((bb) => {
+                    const bbName = (bb.komoditas || bb.barang || '').toLowerCase().trim()
+                    return (bbName && (bbName.includes(kLower) || kLower.includes(bbName))) && (bb.sumber?.length || 0) > 0
+                  })
+                  const inSupplier = realSupplier.some((s) => {
+                    const sKom = (s.komoditas || s.namaKomoditas || '').toLowerCase().trim()
+                    return sKom && (sKom.includes(kLower) || kLower.includes(sKom))
+                  })
+
+                  const autoStatus: 'Stock' | 'Non-Stock' = (inBarang || inBahanBaku || inSupplier) ? 'Stock' : 'Non-Stock'
 
                   flatRows.push({
                     _id: `${p._id}-${idx}`,
                     noRequest: p.noRequest || `INQ-2026-${String(flatRows.length + 1).padStart(3, '0')}`,
                     tanggal: p.tanggal || '13/08/2026',
                     buyer: p.buyer || 'Buyer',
-                    negara: p.negara || 'Vietnam',
-                    tujuan: p.tujuan || p.negara || 'Vietnam',
+                    negara: p.negara || '-',
+                    tujuan: p.tujuan || p.negara || '-',
                     komoditas: komoditasName,
                     spesifikasi: it.spesifikasi || it.size || 'Grade A',
                     size: it.size || '',
@@ -653,18 +821,36 @@ export function PermintaanCabang() {
                   })
                 })
               } else {
+                const komoditasName = (p.komoditas || 'Cakalang').trim()
+                const kLower = komoditasName.toLowerCase()
+
+                const inBarang = realBarang.some((b) => {
+                  const bNama = (b.nama || '').toLowerCase().trim()
+                  return bNama && (bNama.includes(kLower) || kLower.includes(bNama))
+                })
+                const inBahanBaku = realBahanBaku.some((bb) => {
+                  const bbName = (bb.komoditas || bb.barang || '').toLowerCase().trim()
+                  return (bbName && (bbName.includes(kLower) || kLower.includes(bbName))) && (bb.sumber?.length || 0) > 0
+                })
+                const inSupplier = realSupplier.some((s) => {
+                  const sKom = (s.komoditas || s.namaKomoditas || '').toLowerCase().trim()
+                  return sKom && (sKom.includes(kLower) || kLower.includes(sKom))
+                })
+
+                const autoStatus: 'Stock' | 'Non-Stock' = (inBarang || inBahanBaku || inSupplier) ? 'Stock' : 'Non-Stock'
+
                 flatRows.push({
                   _id: p._id,
                   noRequest: p.noRequest || `INQ-2026-001`,
                   tanggal: p.tanggal || '13/08/2026',
                   buyer: p.buyer || 'Buyer',
-                  negara: p.negara || 'Vietnam',
-                  tujuan: p.tujuan || p.negara || 'Vietnam',
-                  komoditas: p.komoditas || 'Cakalang',
+                  negara: p.negara || '-',
+                  tujuan: p.tujuan || p.negara || '-',
+                  komoditas: komoditasName,
                   spesifikasi: p.spesifikasi || 'Grade A',
                   qty: p.totalQty || p.qty || 1000,
                   hargaBuyer: p.hargaBuyer || 0,
-                  statusStok: p.statusStok || 'Stock',
+                  statusStok: autoStatus,
                   lastUpdated: p.lastUpdated || 'Hari ini oleh Staff',
                   catatan: p.catatan || '',
                   fileQuotation: p.fileQuotation || '',
@@ -775,7 +961,7 @@ export function PermintaanCabang() {
 
   // Flag helper
   const getFlag = (country: string) => {
-    const c = country.toLowerCase()
+    const c = (country || '').toLowerCase()
     if (c.includes('vietnam')) return '🇻🇳'
     if (c.includes('thailand')) return '🇹🇭'
     if (c.includes('jepang') || c.includes('japan')) return '🇯🇵'
@@ -791,23 +977,54 @@ export function PermintaanCabang() {
   // Handle Add New Permintaan
   const handleSavePermintaan = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.buyer || !formData.komoditas || formData.qty <= 0) {
-      alert('Mohon lengkapi Nama Buyer, Komoditas, dan Kuantitas (Qty).')
+    if (!formData.buyer || !formData.komoditas) {
+      alert('Mohon lengkapi Nama Buyer dan Komoditas.')
       return
     }
 
-    const numericTotalPrice = calculatedPrices ? calculatedPrices.totalPriceIDR : 0
-    const numericPerKgPrice = calculatedPrices ? calculatedPrices.pricePerKgIDR : 0
+    const finalSizes = qtyBelumDibagi
+      ? [{ size: 'All Size', qty: Number(singleQty) || 0, harga: Number(singleHarga) || 0, currency: singleCurrency }]
+      : sizeRows
+          .filter((r) => r.size.trim() !== '')
+          .map((r) => ({
+            size: r.size.trim(),
+            qty: Number(r.qty) || 0,
+            harga: Number(r.harga) || 0,
+            currency: r.currency || 'IDR',
+          }))
+
+    const finalTotalQty = qtyBelumDibagi
+      ? Number(singleQty) || 0
+      : sizeMetrics.totalQty
+
+    if (finalTotalQty <= 0) {
+      alert('Mohon isi kuantitas (Qty) minimal 1 kg.')
+      return
+    }
+
+    let numericTotalPrice = 0
+    finalSizes.forEach((s) => {
+      const rate = s.currency === 'USD' ? rates.USD : s.currency === 'JPY' ? rates.JPY : 1
+      numericTotalPrice += s.qty * s.harga * rate
+    })
+
+    const numericPerKgPrice = finalTotalQty > 0 ? Math.round(numericTotalPrice / finalTotalQty) : 0
 
     // Automatic matching with stocks/suppliers
-    const inBarang = barangList.some((b) =>
-      b.nama?.toLowerCase().includes(formData.komoditas.toLowerCase())
-    )
-    const inBahanBaku = bahanBakuList.some((bb) =>
-      (bb.komoditas || bb.barang || '')?.toLowerCase().includes(formData.komoditas.toLowerCase()) &&
-      (bb.sumber?.length || 0) > 0
-    )
-    const autoStatusStok: 'Stock' | 'Non-Stock' = inBarang || inBahanBaku ? 'Stock' : 'Non-Stock'
+    const kLower = formData.komoditas.toLowerCase().trim()
+    const inBarang = barangList.some((b) => {
+      const bNama = (b.nama || '').toLowerCase().trim()
+      return bNama && (bNama.includes(kLower) || kLower.includes(bNama))
+    })
+    const inBahanBaku = bahanBakuList.some((bb) => {
+      const bbName = (bb.komoditas || bb.barang || '').toLowerCase().trim()
+      return (bbName && (bbName.includes(kLower) || kLower.includes(bbName))) && (bb.sumber?.length || 0) > 0
+    })
+    const inSupplier = supplierList.some((s) => {
+      const sKom = (s.komoditas || s.namaKomoditas || '').toLowerCase().trim()
+      return sKom && (sKom.includes(kLower) || kLower.includes(sKom))
+    })
+    const autoStatusStok: 'Stock' | 'Non-Stock' = inBarang || inBahanBaku || inSupplier ? 'Stock' : 'Non-Stock'
 
     let formattedDate = ''
     if (formData.tanggal) {
@@ -822,21 +1039,23 @@ export function PermintaanCabang() {
       formattedDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
     }
 
-    const currentYear = new Date().getFullYear()
-
     const newRow: PermintaanRow = {
-      _id: `inq-${Date.now()}`,
-      noRequest: `INQ-${currentYear}-${String(data.length + 1).padStart(3, '0')}`,
+      _id: `temp-${Date.now()}`,
+      noRequest: `INQ-${new Date().getFullYear()}-${String(data.length + 1).padStart(3, '0')}`,
       tanggal: formattedDate,
       buyer: formData.buyer,
-      negara: formData.negara,
-      tujuan: formData.tujuan || formData.negara,
+      negara: formData.negara || '-',
+      tujuan: formData.tujuan || formData.negara || '-',
       komoditas: formData.komoditas,
-      spesifikasi: formData.spesifikasi || 'Grade A',
-      qty: Number(formData.qty),
+      spesifikasi: formData.spesifikasi || '-',
+      qty: finalTotalQty,
       hargaBuyer: numericTotalPrice,
+      currencyBuyer: finalSizes[0]?.currency || 'IDR',
+      hargaMin: sizeMetrics.minHarga,
+      hargaMax: sizeMetrics.maxHarga,
+      sizes: finalSizes,
       statusStok: autoStatusStok,
-      lastUpdated: `${formattedDate} oleh ${userName}`,
+      lastUpdated: 'Baru saja',
       catatan: formData.catatan,
     }
 
@@ -858,15 +1077,20 @@ export function PermintaanCabang() {
             {
               name: formData.komoditas,
               spesifikasi: formData.spesifikasi,
-              qty: Number(formData.qty),
+              qty: finalTotalQty,
               harga: numericTotalPrice,
               hargaBuyerPerKg: numericPerKgPrice,
             },
           ],
+          sizes: finalSizes,
+          hargaMin: sizeMetrics.minHarga,
+          hargaMax: sizeMetrics.maxHarga,
+          currency: finalSizes[0]?.currency || 'IDR',
           statusStok: autoStatusStok,
           catatan: formData.catatan,
         }),
       })
+      fetchRealData()
     } catch (err) {
       console.error('Error saving to API:', err)
     }
@@ -875,7 +1099,7 @@ export function PermintaanCabang() {
     setFormData({
       tanggal: new Date().toISOString().split('T')[0],
       buyer: '',
-      negara: 'Vietnam',
+      negara: '',
       tujuan: '',
       komoditas: '',
       spesifikasi: '',
@@ -885,6 +1109,15 @@ export function PermintaanCabang() {
       hargaBuyer: '',
       catatan: '',
     })
+    setSizeRows([
+      { size: '100 - 200 g', qty: '', currency: 'IDR', harga: '' },
+      { size: '200 - 300 g', qty: '', currency: 'IDR', harga: '' },
+      { size: '300 - 500 g', qty: '', currency: 'IDR', harga: '' },
+      { size: '500 g Up', qty: '', currency: 'IDR', harga: '' },
+    ])
+    setQtyBelumDibagi(false)
+    setSingleQty('')
+    setSingleHarga('')
   }
 
   // Handle Save Kurs Manual
@@ -1206,7 +1439,22 @@ export function PermintaanCabang() {
                 <span>Terapkan Filter</span>
               </button>
               <button
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={() => {
+                  setFormData({
+                    tanggal: new Date().toISOString().split('T')[0],
+                    buyer: '',
+                    negara: '',
+                    tujuan: '',
+                    komoditas: '',
+                    spesifikasi: '',
+                    qty: 0,
+                    currencyBuyer: 'USD',
+                    priceUnit: 'per_kg',
+                    hargaBuyer: '',
+                    catatan: '',
+                  })
+                  setIsAddModalOpen(true)
+                }}
                 className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
               >
                 <Plus className="w-4 h-4" />
@@ -1260,14 +1508,55 @@ export function PermintaanCabang() {
                         <td className="py-3 px-3 font-semibold text-slate-800">
                           {row.komoditas}
                         </td>
-                        <td className="py-3 px-3 text-slate-600 max-w-xs truncate" title={row.spesifikasi}>
-                          {row.spesifikasi}
+                        <td className="py-3 px-3 text-slate-600 max-w-xs">
+                          <div className="line-clamp-2" title={row.spesifikasi}>{row.spesifikasi || '-'}</div>
+                          {row.sizes && row.sizes.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedDetailItem(row)
+                                setIsDetailSizeModalOpen(true)
+                              }}
+                              className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors cursor-pointer shadow-2xs"
+                            >
+                              <span>{row.sizes.length} Size</span>
+                              <ChevronDown className="w-3 h-3" />
+                            </button>
+                          )}
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-slate-800 whitespace-nowrap">
                           {new Intl.NumberFormat('id-ID').format(row.qty)} kg
                         </td>
                         <td className="py-3 px-3 text-right whitespace-nowrap">
-                          {row.hargaBuyer > 0 ? (
+                          {row.sizes && row.sizes.length > 0 ? (
+                            <div>
+                              <div className="font-bold text-slate-800">
+                                {(() => {
+                                  const validPrices = row.sizes.map((s) => Number(s.harga) || 0).filter((h) => h > 0)
+                                  if (validPrices.length > 0) {
+                                    const minP = Math.min(...validPrices)
+                                    const maxP = Math.max(...validPrices)
+                                    const curr = row.sizes[0]?.currency || 'IDR'
+                                    if (minP !== maxP) {
+                                      if (curr === 'USD') return `USD ${minP.toFixed(2)} - ${maxP.toFixed(2)}`
+                                      if (curr === 'JPY') return `¥ ${minP} - ${maxP}`
+                                      return `Rp ${new Intl.NumberFormat('id-ID').format(minP)} - ${new Intl.NumberFormat('id-ID').format(maxP)}`
+                                    } else {
+                                      if (curr === 'USD') return `USD ${minP.toFixed(2)} / kg`
+                                      if (curr === 'JPY') return `¥ ${minP} / kg`
+                                      return `Rp ${new Intl.NumberFormat('id-ID').format(minP)} / kg`
+                                    }
+                                  }
+                                  return '—'
+                                })()}
+                              </div>
+                              {row.hargaBuyer > 0 && (
+                                <div className="text-[10px] text-slate-400 font-medium">
+                                  Total: {formatPrice(row.hargaBuyer)}
+                                </div>
+                              )}
+                            </div>
+                          ) : row.hargaBuyer > 0 ? (
                             <div>
                               <div className="font-bold text-slate-800">
                                 {formatPrice(row.qty > 0 ? Math.round(row.hargaBuyer / row.qty) : row.hargaBuyer)}
@@ -1380,12 +1669,15 @@ export function PermintaanCabang() {
           </div>
         </div>
 
-        {/* MODAL 1: TAMBAH PERMINTAAN BUYER */}
+        {/* MODAL 1: TAMBAH PERMINTAAN BUYER (MULTI-SIZE SUPPORT) */}
         {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-            <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in duration-200 my-6 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="text-base font-bold text-slate-800">Tambah Permintaan Buyer Baru</h3>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800">Tambah Permintaan Buyer Baru</h3>
+                  <p className="text-xs text-slate-400">Input data spesifikasi dan rincian harga per size dari buyer</p>
+                </div>
                 <button
                   onClick={() => setIsAddModalOpen(false)}
                   className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
@@ -1394,234 +1686,271 @@ export function PermintaanCabang() {
                 </button>
               </div>
 
-              <form onSubmit={handleSavePermintaan} className="space-y-3 text-xs">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      Tanggal Permintaan * <span className="text-blue-600 font-normal">(Pilih dari kalender)</span>
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.tanggal}
-                      onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer"
-                    />
-                  </div>
+              <form onSubmit={handleSavePermintaan} className="space-y-4 text-xs">
+                {/* SECTION 1: INFORMASI UMUM */}
+                <div className="space-y-2.5">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    1. Informasi Umum
+                  </span>
 
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Nama Buyer *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Ba Hai JSC"
-                      value={formData.buyer}
-                      onChange={(e) => setFormData({ ...formData, buyer: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Negara / Tujuan *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Vietnam"
-                      value={formData.negara}
-                      onChange={(e) => setFormData({ ...formData, negara: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Komoditas / Ikan *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Cakalang / Tuna"
-                      value={formData.komoditas}
-                      onChange={(e) => setFormData({ ...formData, komoditas: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Kuantitas (kg) *</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      placeholder="Contoh: 25000"
-                      value={formData.qty || ''}
-                      onChange={(e) => setFormData({ ...formData, qty: Number(e.target.value) })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="block font-bold text-slate-700">
-                        Harga Buyer <span className="font-normal text-slate-400">(Opsional)</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Tanggal Permintaan <span className="text-rose-500">*</span>
                       </label>
-                      {/* Unit Selector: Per kg vs Total */}
-                      <div className="inline-flex rounded-lg p-0.5 bg-slate-100 border border-slate-200 text-[11px]">
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePriceUnit('per_kg')}
-                          className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
-                            formData.priceUnit === 'per_kg'
-                              ? 'bg-white text-blue-600 shadow-xs'
-                              : 'text-slate-500 hover:text-slate-700'
-                          }`}
-                        >
-                          / kg
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePriceUnit('total')}
-                          className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
-                            formData.priceUnit === 'total'
-                              ? 'bg-white text-blue-600 shadow-xs'
-                              : 'text-slate-500 hover:text-slate-700'
-                          }`}
-                        >
-                          Total
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-1.5">
-                      {/* Currency Selector: USD / IDR / JPY */}
-                      <select
-                        value={formData.currencyBuyer}
-                        onChange={(e) => setFormData({ ...formData, currencyBuyer: e.target.value as any })}
-                        className="w-28 px-2.5 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl font-bold text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                      >
-                        <option value="USD">USD ($)</option>
-                        <option value="IDR">IDR (Rp)</option>
-                        <option value="JPY">JPY (¥)</option>
-                      </select>
-
                       <input
-                        type="number"
-                        step="any"
-                        placeholder={
-                          formData.currencyBuyer === 'USD'
-                            ? formData.priceUnit === 'per_kg' ? 'Contoh: 2.10' : 'Contoh: 52500'
-                            : formData.currencyBuyer === 'JPY'
-                            ? formData.priceUnit === 'per_kg' ? 'Contoh: 350' : 'Contoh: 8750000'
-                            : formData.priceUnit === 'per_kg' ? 'Contoh: 45000' : 'Contoh: 405000000'
-                        }
-                        value={formData.hargaBuyer}
-                        onChange={(e) => setFormData({ ...formData, hargaBuyer: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 text-xs"
+                        type="date"
+                        required
+                        value={formData.tanggal}
+                        onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer"
                       />
                     </div>
 
-                    {/* Real-time Currency Conversion Box */}
-                    {calculatedPrices && (
-                      <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-[11px] space-y-1 text-emerald-900 animate-in fade-in duration-150">
-                        {formData.priceUnit === 'per_kg' ? (
-                          <>
-                            <div className="flex justify-between items-center font-bold">
-                              <span>Harga Satuan (/kg):</span>
-                              <span className="text-emerald-700 font-extrabold text-xs">
-                                {formData.currencyBuyer !== 'IDR' ? (
-                                  <>
-                                    {formData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
-                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrices.pricePerKgOriginal)} / kg
-                                    <span className="text-[10px] text-emerald-600 font-normal ml-1">
-                                      (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)}/kg)
-                                    </span>
-                                  </>
-                                ) : (
-                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)} / kg`
-                                )}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-slate-600 pt-0.5 border-t border-emerald-200/50">
-                              <span>Total Estimasi Transaksi:</span>
-                              <span className="font-bold text-slate-800">
-                                {formData.currencyBuyer !== 'IDR' ? (
-                                  <>
-                                    {formData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
-                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrices.totalPriceOriginal)}{' '}
-                                    (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.totalPriceIDR)})
-                                  </>
-                                ) : (
-                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedPrices.totalPriceIDR)}`
-                                )}
-                              </span>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex justify-between items-center font-bold">
-                              <span>Total Nilai Transaksi:</span>
-                              <span className="text-emerald-700 font-extrabold text-xs">
-                                {formData.currencyBuyer !== 'IDR' ? (
-                                  <>
-                                    {formData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
-                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrices.totalPriceOriginal)}{' '}
-                                    <span className="text-[10px] text-emerald-600 font-normal ml-1">
-                                      (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.totalPriceIDR)})
-                                    </span>
-                                  </>
-                                ) : (
-                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedPrices.totalPriceIDR)} Total`
-                                )}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-slate-600 pt-0.5 border-t border-emerald-200/50">
-                              <span>Ekuivalen Satuan (/kg):</span>
-                              <span className="font-bold text-slate-800">
-                                {formData.currencyBuyer !== 'IDR' ? (
-                                  <>
-                                    {formData.currencyBuyer === 'USD' ? '$' : '¥'}{' '}
-                                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrices.pricePerKgOriginal)} / kg{' '}
-                                    (≈ Rp {new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)}/kg)
-                                  </>
-                                ) : (
-                                  `Rp ${new Intl.NumberFormat('id-ID').format(calculatedPrices.pricePerKgIDR)} / kg`
-                                )}
-                              </span>
-                            </div>
-                          </>
-                        )}
-                        {formData.currencyBuyer !== 'IDR' && (
-                          <p className="text-[10px] text-emerald-700/80 italic pt-0.5">
-                            *Kurs: 1 {formData.currencyBuyer} = Rp{' '}
-                            {new Intl.NumberFormat('id-ID').format(formData.currencyBuyer === 'USD' ? rates.USD : rates.JPY)}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Nama Buyer <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contoh: Ba Hai JSC / Ocean Trading"
+                        value={formData.buyer}
+                        onChange={(e) => setFormData({ ...formData, buyer: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Negara / Tujuan <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contoh: Vietnam"
+                        value={formData.negara}
+                        onChange={(e) => setFormData({ ...formData, negara: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Komoditas / Ikan <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contoh: Cuttlefish / Cakalang / Tuna"
+                        value={formData.komoditas}
+                        onChange={(e) => setFormData({ ...formData, komoditas: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-bold text-blue-700"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Spesifikasi Produk <span className="text-slate-400 font-normal">(Opsional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: Whole Round, IQF, Grade A"
+                      value={formData.spesifikasi}
+                      onChange={(e) => setFormData({ ...formData, spesifikasi: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Spesifikasi</label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: 2 kg up, FOB, Grade A"
-                    value={formData.spesifikasi}
-                    onChange={(e) => setFormData({ ...formData, spesifikasi: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
-                  />
+                {/* SECTION 2: DETAIL SIZE & HARGA */}
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        2. Detail Size & Harga
+                      </span>
+                      <p className="text-[11px] text-slate-400">
+                        Tentukan harga dan kuantitas per masing-masing size
+                      </p>
+                    </div>
+
+                    <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={qtyBelumDibagi}
+                        onChange={(e) => setQtyBelumDibagi(e.target.checked)}
+                        className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span>Qty belum dibagi per size</span>
+                    </label>
+                  </div>
+
+                  {qtyBelumDibagi ? (
+                    /* Fallback Single Qty & Single Price */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Total Kuantitas (kg) *</label>
+                        <input
+                          type="number"
+                          required
+                          min={1}
+                          placeholder="Contoh: 25000"
+                          value={singleQty}
+                          onChange={(e) => setSingleQty(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Harga Buyer (/kg)</label>
+                        <div className="flex gap-2">
+                          <select
+                            value={singleCurrency}
+                            onChange={(e) => setSingleCurrency(e.target.value as any)}
+                            className="px-2.5 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl font-bold text-xs"
+                          >
+                            <option value="IDR">IDR (Rp)</option>
+                            <option value="USD">USD ($)</option>
+                            <option value="JPY">JPY (¥)</option>
+                          </select>
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="Contoh: 45000"
+                            value={singleHarga}
+                            onChange={(e) => setSingleHarga(e.target.value)}
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Multi-Size Dynamic Breakdown Table */
+                    <div className="space-y-2.5">
+                      <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
+                            <tr>
+                              <th className="py-2.5 px-3">Size / Ukuran</th>
+                              <th className="py-2.5 px-3">Qty (kg)</th>
+                              <th className="py-2.5 px-3">Mata Uang</th>
+                              <th className="py-2.5 px-3">Harga Buyer (/kg)</th>
+                              <th className="py-2.5 px-3 text-center w-12">Aksi</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {sizeRows.map((row, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="py-2 px-3">
+                                  <input
+                                    type="text"
+                                    placeholder="Contoh: 100 - 200 g"
+                                    value={row.size}
+                                    onChange={(e) => handleUpdateSizeRow(idx, 'size', e.target.value)}
+                                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium text-xs"
+                                  />
+                                </td>
+                                <td className="py-2 px-3">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    placeholder="0"
+                                    value={row.qty}
+                                    onChange={(e) => handleUpdateSizeRow(idx, 'qty', e.target.value)}
+                                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold text-xs text-right"
+                                  />
+                                </td>
+                                <td className="py-2 px-3">
+                                  <select
+                                    value={row.currency}
+                                    onChange={(e) => handleUpdateSizeRow(idx, 'currency', e.target.value)}
+                                    className="w-full px-2 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg font-bold text-xs cursor-pointer"
+                                  >
+                                    <option value="IDR">IDR (Rp)</option>
+                                    <option value="USD">USD ($)</option>
+                                    <option value="JPY">JPY (¥)</option>
+                                  </select>
+                                </td>
+                                <td className="py-2 px-3">
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    placeholder={row.currency === 'USD' ? '2.50' : '25000'}
+                                    value={row.harga}
+                                    onChange={(e) => handleUpdateSizeRow(idx, 'harga', e.target.value)}
+                                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 font-bold text-xs text-right"
+                                  />
+                                </td>
+                                <td className="py-2 px-3 text-center">
+                                  {sizeRows.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveSizeRow(idx)}
+                                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                      title="Hapus baris size"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-1">
+                        <button
+                          type="button"
+                          onClick={handleAddSizeRow}
+                          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Tambah Size</span>
+                        </button>
+
+                        <span className="text-[11px] text-slate-400">
+                          {sizeRows.filter((r) => r.size.trim() !== '').length} size terdaftar
+                        </span>
+                      </div>
+
+                      {/* SUMMARY CARDS */}
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Total Qty
+                          </span>
+                          <p className="text-base font-extrabold text-slate-800 mt-0.5">
+                            {new Intl.NumberFormat('id-ID').format(sizeMetrics.totalQty)} kg
+                          </p>
+                        </div>
+
+                        <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3">
+                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                            Range / Rata-rata Harga
+                          </span>
+                          <p className="text-xs font-bold text-blue-900 mt-1 truncate">
+                            {sizeMetrics.rangeText}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div>
+                {/* SECTION 3: CATATAN TAMBAHAN */}
+                <div className="space-y-1.5 pt-2 border-t border-slate-100">
                   <label className="block font-bold text-slate-700 mb-1">Catatan Tambahan</label>
                   <textarea
                     rows={2}
-                    placeholder="Catatan khusus transaksi..."
+                    placeholder="Catatan khusus spesifikasi, packaging, atau terms pengiriman..."
                     value={formData.catatan}
                     onChange={(e) => setFormData({ ...formData, catatan: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 text-xs resize-none"
                   />
                 </div>
 
@@ -1629,13 +1958,13 @@ export function PermintaanCabang() {
                   <button
                     type="button"
                     onClick={() => setIsAddModalOpen(false)}
-                    className="px-4 py-2 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
+                    className="px-4 py-2 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer transition-colors"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer"
+                    className="px-5 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer transition-colors"
                   >
                     Simpan Permintaan
                   </button>
@@ -2055,6 +2384,175 @@ export function PermintaanCabang() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 5: DETAIL PERMINTAAN BUYER (POPUP DETAIL SIZE & HARGA) */}
+        {isDetailSizeModalOpen && selectedDetailItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in duration-200 my-6">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800">
+                      Detail Permintaan Buyer — {selectedDetailItem.komoditas}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {selectedDetailItem.noRequest} • {selectedDetailItem.buyer} ({selectedDetailItem.negara})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsDetailSizeModalOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Info Badges Card */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 bg-slate-50/80 rounded-xl border border-slate-200/70 text-xs">
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Tanggal</span>
+                  <span className="font-semibold text-slate-800">{selectedDetailItem.tanggal}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Total Kuantitas</span>
+                  <span className="font-extrabold text-blue-700">
+                    {new Intl.NumberFormat('id-ID').format(selectedDetailItem.qty)} kg
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Spesifikasi</span>
+                  <span className="font-medium text-slate-700 truncate block">
+                    {selectedDetailItem.spesifikasi || '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Status Ketersediaan</span>
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold mt-0.5 ${
+                      selectedDetailItem.statusStok === 'Stock'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                    }`}
+                  >
+                    {selectedDetailItem.statusStok === 'Stock' ? '✓ Tersedia (Stock)' : '⚠ Non-Stock'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Size Breakdown Table */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Rincian Kuantitas & Harga per Size
+                  </h4>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {(selectedDetailItem.sizes || []).length} Size Terdefinisi
+                  </span>
+                </div>
+
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
+                      <tr>
+                        <th className="py-2.5 px-3 text-center w-10">No</th>
+                        <th className="py-2.5 px-3">Size / Ukuran</th>
+                        <th className="py-2.5 px-3 text-right">Kuantitas (kg)</th>
+                        <th className="py-2.5 px-3 text-right">Harga Buyer (/kg)</th>
+                        <th className="py-2.5 px-3 text-right">Subtotal Estimasi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {selectedDetailItem.sizes && selectedDetailItem.sizes.length > 0 ? (
+                        selectedDetailItem.sizes.map((s, idx) => {
+                          const rate = s.currency === 'USD' ? rates.USD : s.currency === 'JPY' ? rates.JPY : 1
+                          const subtotal = s.qty * s.harga * rate
+                          return (
+                            <tr key={idx} className="hover:bg-blue-50/20 transition-colors">
+                              <td className="py-2.5 px-3 text-center text-slate-400">{idx + 1}</td>
+                              <td className="py-2.5 px-3 font-bold text-slate-800">{s.size}</td>
+                              <td className="py-2.5 px-3 text-right font-semibold text-slate-700">
+                                {new Intl.NumberFormat('id-ID').format(s.qty)} kg
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-bold text-blue-700">
+                                {s.currency === 'USD'
+                                  ? `$ ${s.harga.toFixed(2)}`
+                                  : s.currency === 'JPY'
+                                  ? `¥ ${new Intl.NumberFormat('ja-JP').format(s.harga)}`
+                                  : `Rp ${new Intl.NumberFormat('id-ID').format(s.harga)}`}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-extrabold text-slate-800">
+                                Rp {new Intl.NumberFormat('id-ID').format(subtotal)}
+                              </td>
+                            </tr>
+                          )
+                        })
+                      ) : (
+                        <tr>
+                          <td className="py-2.5 px-3 text-center text-slate-400">1</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-800">All Size</td>
+                          <td className="py-2.5 px-3 text-right font-semibold text-slate-700">
+                            {new Intl.NumberFormat('id-ID').format(selectedDetailItem.qty)} kg
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-bold text-blue-700">
+                            {selectedDetailItem.currencyBuyer === 'USD'
+                              ? `$ ${(selectedDetailItem.hargaBuyer / (rates.USD * (selectedDetailItem.qty || 1))).toFixed(2)}`
+                              : `Rp ${new Intl.NumberFormat('id-ID').format(selectedDetailItem.qty > 0 ? Math.round(selectedDetailItem.hargaBuyer / selectedDetailItem.qty) : selectedDetailItem.hargaBuyer)}`}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-extrabold text-slate-800">
+                            Rp {new Intl.NumberFormat('id-ID').format(selectedDetailItem.hargaBuyer)}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                    <tfoot className="bg-slate-50 border-t border-slate-200 font-bold text-slate-800">
+                      <tr>
+                        <td colSpan={2} className="py-2.5 px-3 text-right">Total:</td>
+                        <td className="py-2.5 px-3 text-right text-blue-700">
+                          {new Intl.NumberFormat('id-ID').format(selectedDetailItem.qty)} kg
+                        </td>
+                        <td></td>
+                        <td className="py-2.5 px-3 text-right font-extrabold text-emerald-700">
+                          Rp {new Intl.NumberFormat('id-ID').format(selectedDetailItem.hargaBuyer)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Catatan / Keterangan */}
+              {selectedDetailItem.catatan && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Catatan Tambahan:</span>
+                  <p className="text-slate-700">{selectedDetailItem.catatan}</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <button
+                  onClick={() => handleDownloadDetailPDF(selectedDetailItem)}
+                  className="px-4 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download PDF Detail</span>
+                </button>
+
+                <button
+                  onClick={() => setIsDetailSizeModalOpen(false)}
+                  className="px-5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer transition-colors"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
         )}

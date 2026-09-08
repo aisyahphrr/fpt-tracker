@@ -24,7 +24,19 @@ import {
   ChevronDown,
   ExternalLink,
   MoreVertical,
+  Eye,
+  Info,
+  Download,
 } from 'lucide-react'
+
+interface SumberDetailSize {
+  size: string
+  qty: number
+  hargaBB: number
+  hargaProses: number
+  hargaLogistik: number
+  hargaAkhir: number
+}
 
 interface SumberItem {
   _id?: string
@@ -32,6 +44,7 @@ interface SumberItem {
   supplier?: string
   qty: number
   spesifikasi?: string
+  sizes?: SumberDetailSize[]
   hargaBahanBaku?: number
   hargaProses?: number
   hargaLogistik?: number
@@ -49,6 +62,7 @@ interface BahanBakuRow {
   komoditas: string
   qtyPermintaan: number
   hargaBuyer?: number // Target price per kg
+  allowedSizes?: Array<{ size: string; qty?: number; harga?: number; currency?: string }>
   lastUpdated: string
   sumber: SumberItem[]
   filePerhitungan?: string
@@ -85,15 +99,22 @@ export function BahanBakuCabang() {
   // Search inside Detail Modal
   const [searchSumberQuery, setSearchSumberQuery] = useState('')
 
-  // Form State for Tambah Sumber
+  // Supplier Detail Popup Modal
+  const [selectedSupplierDetail, setSelectedSupplierDetail] = useState<SumberItem | null>(null)
+
+  // Multi-Size Form State for Tambah Sumber
+  interface SumberSizeRowState {
+    size: string
+    qty: string
+    hargaBB: string
+    hargaProses: string
+    hargaLogistik: string
+  }
+  const [sumberSizeRows, setSumberSizeRows] = useState<SumberSizeRowState[]>([])
+
   const [formSumber, setFormSumber] = useState({
     cabang: 'Jakarta',
-    qty: '',
     supplier: '',
-    spesifikasi: '',
-    hargaBahanBaku: '',
-    hargaProses: '',
-    hargaLogistik: '',
     catatan: '',
     lampiranName: '',
   })
@@ -283,15 +304,46 @@ export function BahanBakuCabang() {
     setShowSuccessAdded(false)
     setFormSumber({
       cabang: 'Jakarta',
-      qty: '',
       supplier: '',
-      spesifikasi: '',
-      hargaBahanBaku: '',
-      hargaProses: '',
-      hargaLogistik: '',
       catatan: '',
       lampiranName: '',
     })
+
+    // Pre-populate sizes from selected buyer request
+    let initialSizes: Array<{ size: string; qty: string; hargaBB: string; hargaProses: string; hargaLogistik: string }> = []
+    if (row.allowedSizes && row.allowedSizes.length > 0) {
+      initialSizes = row.allowedSizes.map((s) => ({
+        size: s.size,
+        qty: '',
+        hargaBB: '',
+        hargaProses: '',
+        hargaLogistik: '',
+      }))
+    } else {
+      const k = (row.komoditas || '').toLowerCase()
+      if (k.includes('cuttlefish') || k.includes('squid') || k.includes('cumi') || k.includes('sotong')) {
+        initialSizes = [
+          { size: '100 - 200 g', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+          { size: '200 - 300 g', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+          { size: '300 - 500 g', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+          { size: '500 g Up', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+        ]
+      } else if (k.includes('cakalang') || k.includes('skipjack')) {
+        initialSizes = [
+          { size: 'Size 1 kg', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+          { size: 'Size 1 - 2 kg', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+          { size: 'Size 2 - 4 kg', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+          { size: 'Size 4 kg Up', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+        ]
+      } else {
+        initialSizes = [
+          { size: 'Grade A (1-2 kg)', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+          { size: 'Grade B (2-4 kg)', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+          { size: 'Grade C (4 kg Up)', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+        ]
+      }
+    }
+    setSumberSizeRows(initialSizes)
     setIsAddSumberModalOpen(true)
   }
 
@@ -302,36 +354,95 @@ export function BahanBakuCabang() {
     setIsDetailSumberModalOpen(true)
   }
 
-  // Calculate Harga Akhir live on Form input: BB + Proses + Logistik
-  const liveHargaAkhir = useMemo(() => {
-    const hb = parseFloat(formSumber.hargaBahanBaku) || 0
-    const hp = parseFloat(formSumber.hargaProses) || 0
-    const hl = parseFloat(formSumber.hargaLogistik) || 0
-    return hb + hp + hl
-  }, [formSumber.hargaBahanBaku, formSumber.hargaProses, formSumber.hargaLogistik])
+  const handleAddSumberSizeRow = () => {
+    setSumberSizeRows((prev) => [
+      ...prev,
+      { size: '', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+    ])
+  }
+
+  const handleRemoveSumberSizeRow = (idx: number) => {
+    setSumberSizeRows((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  const handleUpdateSumberSizeRow = (idx: number, field: string, val: string) => {
+    setSumberSizeRows((prev) =>
+      prev.map((r, i) => (i === idx ? { ...r, [field]: val } : r))
+    )
+  }
+
+  // Calculate live multi-size metrics
+  const sumberMetrics = useMemo(() => {
+    let totalQty = 0
+    let totalValue = 0
+    let validRowsCount = 0
+
+    const computed = sumberSizeRows.map((r) => {
+      const q = Number(r.qty) || 0
+      const bb = Number(r.hargaBB) || 0
+      const hp = Number(r.hargaProses) || 0
+      const hl = Number(r.hargaLogistik) || 0
+      const akhir = bb + hp + hl
+      totalQty += q
+      if (akhir > 0) {
+        validRowsCount++
+        totalValue += q > 0 ? q * akhir : akhir
+      }
+      return {
+        ...r,
+        numericBB: bb,
+        numericProses: hp,
+        numericLogistik: hl,
+        numericAkhir: akhir,
+      }
+    })
+
+    const avgHargaAkhir =
+      totalQty > 0
+        ? Math.round(totalValue / totalQty)
+        : validRowsCount > 0
+        ? Math.round(totalValue / validRowsCount)
+        : 0
+
+    return { totalQty, avgHargaAkhir, computed }
+  }, [sumberSizeRows])
 
   // Submit Tambah Sumber
   const handleSubmitSumber = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedBahanBaku) return
-    if (!formSumber.cabang || !formSumber.qty || Number(formSumber.qty) <= 0) {
-      alert('Mohon lengkapi Cabang / Lokasi dan Qty Tersedia.')
+    if (!formSumber.cabang) {
+      alert('Mohon pilih Cabang / Lokasi.')
+      return
+    }
+
+    if (sumberMetrics.totalQty <= 0) {
+      alert('Mohon isi minimal satu baris kuantitas (Qty Tersedia) untuk size.')
       return
     }
 
     const now = new Date()
     const formattedDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB by ${userName}`
 
+    const finalSizes: SumberDetailSize[] = sumberMetrics.computed
+      .filter((r) => r.size.trim() !== '')
+      .map((r) => ({
+        size: r.size.trim(),
+        qty: Number(r.qty) || 0,
+        hargaBB: r.numericBB,
+        hargaProses: r.numericProses,
+        hargaLogistik: r.numericLogistik,
+        hargaAkhir: r.numericAkhir,
+      }))
+
     const newSumberObj: SumberItem = {
       _id: `src-${Date.now()}`,
       cabang: formSumber.cabang,
       supplier: formSumber.supplier || 'Supplier Lokal',
-      qty: Number(formSumber.qty),
-      spesifikasi: formSumber.spesifikasi || 'Grade A',
-      hargaBahanBaku: formSumber.hargaBahanBaku ? Number(formSumber.hargaBahanBaku) : undefined,
-      hargaProses: formSumber.hargaProses ? Number(formSumber.hargaProses) : undefined,
-      hargaLogistik: formSumber.hargaLogistik ? Number(formSumber.hargaLogistik) : undefined,
-      harga: liveHargaAkhir > 0 ? liveHargaAkhir : undefined,
+      qty: sumberMetrics.totalQty,
+      spesifikasi: `${finalSizes.length} Size terdaftar`,
+      sizes: finalSizes,
+      harga: sumberMetrics.avgHargaAkhir > 0 ? sumberMetrics.avgHargaAkhir : undefined,
       catatan: formSumber.catatan,
       lampiran: formSumber.lampiranName,
       lastUpdated: formattedDate,
@@ -357,8 +468,11 @@ export function BahanBakuCabang() {
     // Show Success State inside Modal
     setAddedSummary({
       cabang: formSumber.cabang,
-      qty: Number(formSumber.qty),
-      hargaAkhir: liveHargaAkhir > 0 ? `Rp ${new Intl.NumberFormat('id-ID').format(liveHargaAkhir)}/kg` : 'Belum tersedia',
+      qty: sumberMetrics.totalQty,
+      hargaAkhir:
+        sumberMetrics.avgHargaAkhir > 0
+          ? `Rp ${new Intl.NumberFormat('id-ID').format(sumberMetrics.avgHargaAkhir)}/kg (Rata-rata)`
+          : 'Belum tersedia',
       jumlahSumber: (selectedBahanBaku.sumber?.length || 0) + 1,
     })
     setShowSuccessAdded(true)
@@ -811,7 +925,7 @@ export function BahanBakuCabang() {
                   </div>
 
                   <form onSubmit={handleSubmitSumber} className="space-y-4 text-xs">
-                    {/* Baris 1: Cabang & Qty */}
+                    {/* Baris 1: Cabang & Supplier */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <div>
                         <label className="block font-bold text-slate-700 mb-1.5">
@@ -821,7 +935,7 @@ export function BahanBakuCabang() {
                           required
                           value={formSumber.cabang}
                           onChange={(e) => setFormSumber({ ...formSumber, cabang: e.target.value })}
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer transition-all"
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer transition-all"
                         >
                           {DAFTAR_CABANG.map((c) => (
                             <option key={c} value={c}>{c}</option>
@@ -831,115 +945,165 @@ export function BahanBakuCabang() {
 
                       <div>
                         <label className="block font-bold text-slate-700 mb-1.5">
-                          Qty Tersedia (kg) <span className="text-rose-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          required
-                          min={1}
-                          placeholder="Contoh: 2000"
-                          value={formSumber.qty}
-                          onChange={(e) => setFormSumber({ ...formSumber, qty: e.target.value })}
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Baris 2: Supplier & Spesifikasi */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1.5">
-                          Supplier <span className="font-normal text-slate-400">(Opsional)</span>
+                          Nama Supplier <span className="font-normal text-slate-400">(Opsional)</span>
                         </label>
                         <input
                           type="text"
-                          placeholder="Nama supplier / nelayan..."
+                          placeholder="Contoh: CV Samudra Mandiri / Nelayan Lokal"
                           value={formSumber.supplier}
                           onChange={(e) => setFormSumber({ ...formSumber, supplier: e.target.value })}
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium transition-all"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1.5">
-                          Spesifikasi <span className="font-normal text-slate-400">(Opsional)</span>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Size, grade, kondisi, dll."
-                          value={formSumber.spesifikasi}
-                          onChange={(e) => setFormSumber({ ...formSumber, spesifikasi: e.target.value })}
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium transition-all"
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium transition-all"
                         />
                       </div>
                     </div>
 
-                    {/* Baris 3: STRUKTUR HARGA PENAWARAN */}
-                    <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                    {/* Baris 2: TABEL KETERSEDIAAN & RINCIAN HARGA PER SIZE */}
+                    <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
-                          Rincian Harga (IDR / kg)
-                        </span>
+                        <div>
+                          <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                            Ketersediaan & Rincian Harga per Size
+                          </span>
+                          <p className="text-[10px] text-slate-400">
+                            Khusus size yang diminta buyer {selectedBahanBaku.buyer}
+                          </p>
+                        </div>
                         <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-full border border-blue-200">
                           Rumus: BB + Proses + Logistik
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 items-end">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                            Harga BB
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="Rp / kg"
-                            value={formSumber.hargaBahanBaku}
-                            onChange={(e) => setFormSumber({ ...formSumber, hargaBahanBaku: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs"
-                          />
+                      <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[10px]">
+                            <tr>
+                              <th className="py-2 px-2.5">Size / Ukuran</th>
+                              <th className="py-2 px-2 text-right">Qty (kg) *</th>
+                              <th className="py-2 px-2 text-right">Harga BB (Rp)</th>
+                              <th className="py-2 px-2 text-right">Proses (Rp)</th>
+                              <th className="py-2 px-2 text-right">Logistik (Rp)</th>
+                              <th className="py-2 px-2.5 text-right font-extrabold text-blue-900">Harga Akhir</th>
+                              <th className="py-2 px-1 text-center w-8"></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {sumberSizeRows.map((row, idx) => {
+                              const bb = Number(row.hargaBB) || 0
+                              const hp = Number(row.hargaProses) || 0
+                              const hl = Number(row.hargaLogistik) || 0
+                              const akhir = bb + hp + hl
+
+                              return (
+                                <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                                  <td className="py-1.5 px-2.5">
+                                    <input
+                                      type="text"
+                                      placeholder="Size..."
+                                      value={row.size}
+                                      onChange={(e) => handleUpdateSumberSizeRow(idx, 'size', e.target.value)}
+                                      className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold text-xs"
+                                    />
+                                  </td>
+                                  <td className="py-1.5 px-2">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      placeholder="0"
+                                      value={row.qty}
+                                      onChange={(e) => handleUpdateSumberSizeRow(idx, 'qty', e.target.value)}
+                                      className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 font-bold text-xs text-right text-slate-800"
+                                    />
+                                  </td>
+                                  <td className="py-1.5 px-2">
+                                    <input
+                                      type="number"
+                                      placeholder="Rp"
+                                      value={row.hargaBB}
+                                      onChange={(e) => handleUpdateSumberSizeRow(idx, 'hargaBB', e.target.value)}
+                                      className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs text-right"
+                                    />
+                                  </td>
+                                  <td className="py-1.5 px-2">
+                                    <input
+                                      type="number"
+                                      placeholder="Rp"
+                                      value={row.hargaProses}
+                                      onChange={(e) => handleUpdateSumberSizeRow(idx, 'hargaProses', e.target.value)}
+                                      className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs text-right"
+                                    />
+                                  </td>
+                                  <td className="py-1.5 px-2">
+                                    <input
+                                      type="number"
+                                      placeholder="Rp"
+                                      value={row.hargaLogistik}
+                                      onChange={(e) => handleUpdateSumberSizeRow(idx, 'hargaLogistik', e.target.value)}
+                                      className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs text-right"
+                                    />
+                                  </td>
+                                  <td className="py-1.5 px-2.5 text-right font-extrabold text-blue-700 whitespace-nowrap">
+                                    {akhir > 0 ? `Rp ${new Intl.NumberFormat('id-ID').format(akhir)}` : '—'}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center">
+                                    {sumberSizeRows.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveSumberSizeRow(idx)}
+                                        className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+                                        title="Hapus baris"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-0.5">
+                        <button
+                          type="button"
+                          onClick={handleAddSumberSizeRow}
+                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Tambah Size</span>
+                        </button>
+
+                        <span className="text-[11px] text-slate-400">
+                          {sumberSizeRows.filter((r) => r.size.trim() !== '').length} size terisi
+                        </span>
+                      </div>
+
+                      {/* SUMMARY METRIC CARDS */}
+                      <div className="grid grid-cols-2 gap-3 pt-1">
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Total Qty Tersedia
+                          </span>
+                          <p className="text-base font-extrabold text-slate-800 mt-0.5">
+                            {new Intl.NumberFormat('id-ID').format(sumberMetrics.totalQty)} kg
+                          </p>
                         </div>
 
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                            Harga Proses
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="Rp / kg"
-                            value={formSumber.hargaProses}
-                            onChange={(e) => setFormSumber({ ...formSumber, hargaProses: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                            Harga Logistik
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="Rp / kg"
-                            value={formSumber.hargaLogistik}
-                            onChange={(e) => setFormSumber({ ...formSumber, hargaLogistik: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-blue-900 mb-1">
-                            Harga Akhir
-                          </label>
-                          <div className="w-full px-3 py-2 bg-blue-600 border border-blue-600 rounded-lg font-bold text-white text-center flex items-center justify-center h-[34px] text-xs shadow-xs truncate">
-                            {liveHargaAkhir > 0
-                              ? `Rp ${new Intl.NumberFormat('id-ID').format(liveHargaAkhir)}/kg`
-                              : 'Rp 0 / kg'}
-                          </div>
+                        <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3">
+                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                            Rata-rata Harga Akhir
+                          </span>
+                          <p className="text-base font-extrabold text-blue-900 mt-0.5">
+                            {sumberMetrics.avgHargaAkhir > 0
+                              ? `Rp ${new Intl.NumberFormat('id-ID').format(sumberMetrics.avgHargaAkhir)}/kg`
+                              : '—'}
+                          </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Baris 4: Lampiran & Catatan */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* Baris 3: Lampiran & Catatan */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                       <div>
                         <label className="block font-bold text-slate-700 mb-1.5">
                           Lampiran Perhitungan <span className="font-normal text-slate-400">(Opsional)</span>
@@ -963,6 +1127,14 @@ export function BahanBakuCabang() {
                           className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 text-xs h-20 resize-none transition-all"
                         />
                       </div>
+                    </div>
+
+                    {/* Info Alert Banner */}
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-blue-50/90 border border-blue-200 text-blue-900 text-xs font-medium">
+                      <Info className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>
+                        Harga proses, harga logistik, dan file perhitungan tidak wajib diisi. Jika dikosongkan, harga akhir hanya menggunakan harga bahan baku.
+                      </span>
                     </div>
 
                     {/* Modal Footer Buttons */}
@@ -1141,7 +1313,25 @@ export function BahanBakuCabang() {
                         <tr key={s._id || idx} className="hover:bg-blue-50/30 transition-colors">
                           <td className="py-2.5 px-3 text-center text-slate-400">{idx + 1}</td>
                           <td className="py-2.5 px-3 font-bold text-slate-800">{s.cabang}</td>
-                          <td className="py-2.5 px-3 text-slate-600">{s.supplier || '—'}</td>
+                          <td className="py-2.5 px-3">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold text-slate-800">{s.supplier || '—'}</span>
+                              {s.sizes && s.sizes.length > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedSupplierDetail(s)}
+                                  className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer flex items-center gap-1"
+                                >
+                                  <span>{s.sizes.length} Size</span>
+                                  <ChevronDown className="w-2.5 h-2.5" />
+                                </button>
+                              ) : (
+                                s.spesifikasi && (
+                                  <span className="text-[10px] text-slate-400">({s.spesifikasi})</span>
+                                )
+                              )}
+                            </div>
+                          </td>
                           <td className="py-2.5 px-3 text-right font-semibold text-slate-800">
                             {new Intl.NumberFormat('id-ID').format(s.qty)} kg
                           </td>
@@ -1152,13 +1342,25 @@ export function BahanBakuCabang() {
                           </td>
                           <td className="py-2.5 px-3 text-[11px] text-slate-500">{s.lastUpdated || 'Hari ini'}</td>
                           <td className="py-2.5 px-3 text-center">
-                            <button
-                              onClick={() => handleDeleteSumber(s._id, idx)}
-                              className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                              title="Hapus Sumber"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center justify-center gap-1">
+                              {s.sizes && s.sizes.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedSupplierDetail(s)}
+                                  className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                  title="Lihat Detail Size Supplier"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDeleteSumber(s._id, idx)}
+                                className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Hapus Sumber"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -1172,6 +1374,118 @@ export function BahanBakuCabang() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Detail Size Sub-table (Panel 5 Ilustrasi Mentor) */}
+              {filteredSumberList.some((s) => s.sizes && s.sizes.length > 0) && (
+                <div className="space-y-2 pt-1 border-t border-slate-100">
+                  {filteredSumberList
+                    .filter((s) => s.sizes && s.sizes.length > 0)
+                    .map((s, sIdx) => {
+                      const totalSubQty = (s.sizes || []).reduce((sum, sz) => sum + (sz.qty || 0), 0)
+                      const avgSubBB =
+                        (s.sizes || []).reduce((sum, sz) => sum + (sz.hargaBB || 0), 0) /
+                        ((s.sizes || []).length || 1)
+                      const avgSubProses =
+                        (s.sizes || []).reduce((sum, sz) => sum + (sz.hargaProses || 0), 0) /
+                        ((s.sizes || []).length || 1)
+                      const avgSubLogistik =
+                        (s.sizes || []).reduce((sum, sz) => sum + (sz.hargaLogistik || 0), 0) /
+                        ((s.sizes || []).length || 1)
+
+                      return (
+                        <div key={sIdx} className="space-y-2">
+                          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" />
+                            Detail Size dari {s.supplier || s.cabang}
+                          </h4>
+
+                          <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                            <table className="w-full text-left border-collapse text-xs">
+                              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[10px]">
+                                <tr>
+                                  <th className="py-2 px-3 text-center w-10">No</th>
+                                  <th className="py-2 px-3">Size</th>
+                                  <th className="py-2 px-3 text-right">Qty Tersedia</th>
+                                  <th className="py-2 px-3 text-right">Harga BB</th>
+                                  <th className="py-2 px-3 text-right">Harga Proses</th>
+                                  <th className="py-2 px-3 text-right">Harga Logistik</th>
+                                  <th className="py-2 px-3 text-right font-extrabold text-blue-900">Harga Akhir</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {(s.sizes || []).map((sz, szIdx) => (
+                                  <tr key={szIdx} className="hover:bg-blue-50/20 transition-colors">
+                                    <td className="py-2 px-3 text-center text-slate-400">{szIdx + 1}</td>
+                                    <td className="py-2 px-3 font-bold text-slate-800">{sz.size}</td>
+                                    <td className="py-2 px-3 text-right font-semibold text-slate-700">
+                                      {new Intl.NumberFormat('id-ID').format(sz.qty)} kg
+                                    </td>
+                                    <td className="py-2 px-3 text-right text-slate-600">
+                                      {new Intl.NumberFormat('id-ID').format(sz.hargaBB || 0)}
+                                    </td>
+                                    <td className="py-2 px-3 text-right text-slate-600">
+                                      {new Intl.NumberFormat('id-ID').format(sz.hargaProses || 0)}
+                                    </td>
+                                    <td className="py-2 px-3 text-right text-slate-600">
+                                      {new Intl.NumberFormat('id-ID').format(sz.hargaLogistik || 0)}
+                                    </td>
+                                    <td className="py-2 px-3 text-right font-extrabold text-blue-700">
+                                      {new Intl.NumberFormat('id-ID').format(sz.hargaAkhir || 0)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot className="bg-slate-50/90 border-t border-slate-200 font-bold text-[11px] text-slate-800">
+                                <tr>
+                                  <td colSpan={2} className="py-2 px-3">
+                                    Total ({s.sizes?.[0]?.size} - {s.sizes?.[s.sizes.length - 1]?.size}):
+                                  </td>
+                                  <td className="py-2 px-3 text-right text-blue-700">
+                                    {new Intl.NumberFormat('id-ID').format(totalSubQty)} kg
+                                  </td>
+                                  <td className="py-2 px-3 text-right text-slate-600 font-normal">
+                                    avg {new Intl.NumberFormat('id-ID').format(Math.round(avgSubBB))}
+                                  </td>
+                                  <td className="py-2 px-3 text-right text-slate-600 font-normal">
+                                    avg {new Intl.NumberFormat('id-ID').format(Math.round(avgSubProses))}
+                                  </td>
+                                  <td className="py-2 px-3 text-right text-slate-600 font-normal">
+                                    {new Intl.NumberFormat('id-ID').format(Math.round(avgSubLogistik))}
+                                  </td>
+                                  <td className="py-2 px-3 text-right font-extrabold text-emerald-700">
+                                    avg {new Intl.NumberFormat('id-ID').format(s.harga || 0)}
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                  {/* File Perhitungan Download Box */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                        XLS
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-slate-800">
+                          {selectedBahanBaku.filePerhitungan || `Perhitungan_${selectedBahanBaku.komoditas}_PSTP.xlsx`}
+                        </p>
+                        <p className="text-[10px] text-slate-400">245 KB • Lampiran Perhitungan Biaya</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => alert(`Mengunduh file ${selectedBahanBaku.filePerhitungan || 'Perhitungan_Biaya.xlsx'}...`)}
+                      className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                    >
+                      <Download className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Download File</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Box Ringkasan Perhitungan */}
               <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-xs text-slate-600">
@@ -1289,6 +1603,128 @@ export function BahanBakuCabang() {
                   className="px-5 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer"
                 >
                   Simpan Kurs
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. MODAL DETAIL SIZE DARI SUPPLIER */}
+        {selectedSupplierDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in duration-200 my-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800">
+                      Rincian Size Supplier — {selectedSupplierDetail.supplier || selectedSupplierDetail.cabang}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Cabang: {selectedSupplierDetail.cabang} • Update: {selectedSupplierDetail.lastUpdated || 'Hari ini'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedSupplierDetail(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Breakdown Table */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[10px]">
+                    <tr>
+                      <th className="py-2.5 px-3 text-center w-10">No</th>
+                      <th className="py-2.5 px-3">Size / Ukuran</th>
+                      <th className="py-2.5 px-3 text-right">Qty (kg)</th>
+                      <th className="py-2.5 px-3 text-right">Harga BB (Rp)</th>
+                      <th className="py-2.5 px-3 text-right">Proses (Rp)</th>
+                      <th className="py-2.5 px-3 text-right">Logistik (Rp)</th>
+                      <th className="py-2.5 px-3 text-right font-extrabold text-blue-900">Harga Akhir</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedSupplierDetail.sizes && selectedSupplierDetail.sizes.length > 0 ? (
+                      selectedSupplierDetail.sizes.map((sz, idx) => (
+                        <tr key={idx} className="hover:bg-blue-50/20 transition-colors">
+                          <td className="py-2.5 px-3 text-center text-slate-400">{idx + 1}</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-800">{sz.size}</td>
+                          <td className="py-2.5 px-3 text-right font-semibold text-slate-700">
+                            {new Intl.NumberFormat('id-ID').format(sz.qty)} kg
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-slate-600">
+                            Rp {new Intl.NumberFormat('id-ID').format(sz.hargaBB || 0)}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-slate-600">
+                            Rp {new Intl.NumberFormat('id-ID').format(sz.hargaProses || 0)}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-slate-600">
+                            Rp {new Intl.NumberFormat('id-ID').format(sz.hargaLogistik || 0)}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-extrabold text-blue-700">
+                            Rp {new Intl.NumberFormat('id-ID').format(sz.hargaAkhir || 0)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="py-2.5 px-3 text-center text-slate-400">1</td>
+                        <td className="py-2.5 px-3 font-bold text-slate-800">All Size</td>
+                        <td className="py-2.5 px-3 text-right font-semibold text-slate-700">
+                          {new Intl.NumberFormat('id-ID').format(selectedSupplierDetail.qty)} kg
+                        </td>
+                        <td className="py-2.5 px-3 text-right text-slate-600">
+                          Rp {new Intl.NumberFormat('id-ID').format(selectedSupplierDetail.hargaBahanBaku || 0)}
+                        </td>
+                        <td className="py-2.5 px-3 text-right text-slate-600">
+                          Rp {new Intl.NumberFormat('id-ID').format(selectedSupplierDetail.hargaProses || 0)}
+                        </td>
+                        <td className="py-2.5 px-3 text-right text-slate-600">
+                          Rp {new Intl.NumberFormat('id-ID').format(selectedSupplierDetail.hargaLogistik || 0)}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-extrabold text-blue-700">
+                          Rp {new Intl.NumberFormat('id-ID').format(selectedSupplierDetail.harga || 0)}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot className="bg-slate-50 border-t border-slate-200 font-bold text-slate-800">
+                    <tr>
+                      <td colSpan={2} className="py-2.5 px-3 text-right">Total:</td>
+                      <td className="py-2.5 px-3 text-right text-blue-700">
+                        {new Intl.NumberFormat('id-ID').format(selectedSupplierDetail.qty)} kg
+                      </td>
+                      <td colSpan={3} className="py-2.5 px-3 text-right text-[11px] text-slate-500 font-normal">
+                        Rata-rata Harga Akhir:
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-extrabold text-emerald-700">
+                        Rp {new Intl.NumberFormat('id-ID').format(selectedSupplierDetail.harga || 0)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {selectedSupplierDetail.catatan && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Catatan Supplier:</span>
+                  <p className="text-slate-700">{selectedSupplierDetail.catatan}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSupplierDetail(null)}
+                  className="px-5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer transition-colors"
+                >
+                  Tutup
                 </button>
               </div>
             </div>

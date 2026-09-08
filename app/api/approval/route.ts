@@ -254,6 +254,7 @@ export async function GET() {
           asal: s.cabang || s.supplier || 'Cabang',
           qty: s.qty || 0,
           harga: s.harga || s.hargaBahanBaku || 0,
+          sizes: Array.isArray(s.sizes) ? s.sizes : [],
           selected: s.selected !== undefined ? s.selected : isApproved,
           status: s.status || 'Menunggu',
           notes: s.catatan || s.notes || 'Penawaran bahan baku dari cabang.',

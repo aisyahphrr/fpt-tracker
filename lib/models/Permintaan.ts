@@ -1,5 +1,12 @@
 import mongoose from 'mongoose';
 
+const SizeDetailSchema = new mongoose.Schema({
+  size: { type: String, default: '' },
+  qty: { type: Number, default: 0 },
+  harga: { type: Number, default: 0 },
+  currency: { type: String, default: 'IDR' },
+}, { _id: false });
+
 const RequestItemSchema = new mongoose.Schema({
   barangId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -27,6 +34,19 @@ const RequestItemSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  hargaMin: {
+    type: Number,
+    default: 0
+  },
+  hargaMax: {
+    type: Number,
+    default: 0
+  },
+  currency: {
+    type: String,
+    default: 'USD'
+  },
+  sizes: [SizeDetailSchema],
   catatan: {
     type: String,
     default: ''

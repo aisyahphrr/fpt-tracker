@@ -93,19 +93,22 @@ export function LaporanCabang() {
   const fetchLiveReportData = async () => {
     try {
       setIsLoading(true)
-      const [resP, resBarang, resAppr] = await Promise.all([
+      const [resP, resBarang, resAppr, resSupplier] = await Promise.all([
         fetch('/api/permintaan'),
         fetch('/api/barang'),
         fetch('/api/approval'),
+        fetch('/api/supplier'),
       ])
 
       let rawPermintaan: any[] = []
       let rawBarang: any[] = []
       let rawApproval: any[] = []
+      let rawSupplier: any[] = []
 
       if (resP.ok) rawPermintaan = await resP.json()
       if (resBarang.ok) rawBarang = await resBarang.json()
       if (resAppr.ok) rawApproval = await resAppr.json()
+      if (resSupplier.ok) rawSupplier = await resSupplier.json()
 
       // 1. Build TAB 1: Rekapitulasi Permintaan Buyer (Semua status: Selesai, Pending, In-Progress)
       const tab1Rows: LaporanPermintaanItem[] = []
@@ -122,18 +125,28 @@ export function LaporanCabang() {
               ? 'Diproses'
               : 'Menunggu / Pending'
 
+            const komName = (it.name || p.komoditas || 'Ikan Laut').trim()
+            const kLower = komName.toLowerCase()
+            const hasStock = rawBarang.some((b: any) => {
+              const bName = (b.nama || '').toLowerCase().trim()
+              return bName && (bName.includes(kLower) || kLower.includes(bName))
+            }) || rawSupplier.some((s: any) => {
+              const sKom = (s.komoditas || s.namaKomoditas || '').toLowerCase().trim()
+              return sKom && (sKom.includes(kLower) || kLower.includes(sKom))
+            })
+
             tab1Rows.push({
               no: tab1Rows.length + 1,
               tanggal: p.tanggal || '13/08/2026',
               buyer: p.buyer || 'Buyer',
-              negara: p.negara || 'Vietnam',
-              komoditas: it.name || p.komoditas || 'Ikan Laut',
+              negara: p.negara || '-',
+              komoditas: komName,
               spesifikasi: it.spesifikasi || it.size || 'Grade A',
               qty: Number(it.qty) || Number(p.totalQty) || 1000,
               hargaBuyer: priceStr,
               currency: curr,
               statusTransaksi: statusLabel,
-              statusStok: p.statusStok === 'Non-Stock' ? 'Non-Stock' : 'Stock',
+              statusStok: hasStock ? 'Stock' : (p.statusStok === 'Stock' ? 'Stock' : 'Non-Stock'),
             })
           })
         })
@@ -175,8 +188,9 @@ export function LaporanCabang() {
 
           const kurs = appr.kursIDR || 16200
           const hargaBuyerIDR = Math.round((appr.hargaBuyerUSD || 0) * kurs)
-          const diff = avgHarga - hargaBuyerIDR
-          const pct = hargaBuyerIDR > 0 ? ((diff / hargaBuyerIDR) * 100).toFixed(1) : '0'
+          const hasBothPrices = hargaBuyerIDR > 0 && avgHarga > 0
+          const diff = hasBothPrices ? (hargaBuyerIDR - avgHarga) : 0
+          const pct = hasBothPrices ? ((diff / hargaBuyerIDR) * 100).toFixed(1) : '0'
 
           tab3Rows.push({
             no: idx + 1,
@@ -188,7 +202,7 @@ export function LaporanCabang() {
             hargaBuyer: appr.hargaBuyerUSD ? `USD ${appr.hargaBuyerUSD.toFixed(2)} (Rp ${new Intl.NumberFormat('id-ID').format(hargaBuyerIDR)})` : '—',
             qtyTersedia: qtyTersedia,
             hargaAkhir: avgHarga > 0 ? `Rp ${new Intl.NumberFormat('id-ID').format(avgHarga)}/kg` : '—',
-            persentaseSelisih: `${diff >= 0 ? '+' : ''}${pct}%`,
+            persentaseSelisih: hasBothPrices ? `${diff >= 0 ? '+' : ''}${pct}%` : '+0%',
             selisihPositive: diff >= 0,
             status: (appr.status as any) || 'Menunggu',
           })

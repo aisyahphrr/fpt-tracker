@@ -1,5 +1,14 @@
 import mongoose from 'mongoose';
 
+const SumberDetailSizeSchema = new mongoose.Schema({
+  size: { type: String, default: '' },
+  qty: { type: Number, default: 0 },
+  hargaBB: { type: Number, default: 0 },
+  hargaProses: { type: Number, default: 0 },
+  hargaLogistik: { type: Number, default: 0 },
+  hargaAkhir: { type: Number, default: 0 },
+}, { _id: false });
+
 const SumberSchema = new mongoose.Schema({
   _id: { type: mongoose.Schema.Types.Mixed, default: () => new mongoose.Types.ObjectId() },
   namaSumber: { type: String, default: '' },
@@ -8,6 +17,7 @@ const SumberSchema = new mongoose.Schema({
   qty: { type: Number, default: 0 },
   spesifikasi: { type: String, default: '' },
   size: { type: String, default: '' },
+  sizes: [SumberDetailSizeSchema],
   hargaBahanBaku: { type: Number, default: 0 },
   hargaProses: { type: Number, default: 0 },
   hargaLogistik: { type: Number, default: 0 },
@@ -30,6 +40,8 @@ const BahanBakuSchema = new mongoose.Schema(
     qtyPermintaan: { type: Number, default: 1 },
     hargaBuyer: { type: Number, default: 0 },
     incoterm: { type: String, default: 'FOB' },
+    targetBuyer: { type: String, default: '' },
+    allowedSizes: [{ size: String, qty: Number, harga: Number, currency: String }],
     status: { type: String, default: 'Menunggu' },
     sumber: [SumberSchema],
     filePerhitungan: { type: String, default: '' },
