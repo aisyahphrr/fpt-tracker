@@ -139,14 +139,14 @@ export async function GET() {
       for (const p of allPermintaan) {
         for (const item of p.items || []) {
           const komoditasName = item.name;
-          const exists = bahanBaku.some(
+          const existingBB = bahanBaku.find(
             (bb) =>
               bb.noRequest === p.noRequest ||
               (bb.buyer.toLowerCase().trim() === p.buyer.toLowerCase().trim() &&
                 bb.komoditas.toLowerCase().trim() === komoditasName.toLowerCase().trim())
           );
 
-          if (!exists) {
+          if (!existingBB) {
             await BahanBaku.create({
               noRequest: p.noRequest,
               buyer: p.buyer,
@@ -154,10 +154,13 @@ export async function GET() {
               komoditas: komoditasName,
               qtyPermintaan: item.qty || p.totalQty || 1,
               hargaBuyer: item.harga || 0,
+              allowedSizes: p.sizes || [],
               sumber: [], // Belum ada sumber (0 Sumber)
               lastUpdated: p.lastUpdated || `${p.tanggal} oleh Sistem`,
             });
             hasAdded = true;
+          } else if (p.sizes && p.sizes.length > 0 && (!existingBB.allowedSizes || existingBB.allowedSizes.length === 0)) {
+            await BahanBaku.updateOne({ _id: existingBB._id }, { $set: { allowedSizes: p.sizes } });
           }
         }
       }

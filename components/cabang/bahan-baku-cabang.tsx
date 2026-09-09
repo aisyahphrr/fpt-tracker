@@ -108,12 +108,12 @@ export function BahanBakuCabang() {
     qty: string
     hargaBB: string
     hargaProses: string
-    hargaLogistik: string
   }
   const [sumberSizeRows, setSumberSizeRows] = useState<SumberSizeRowState[]>([])
+  const [biayaLogistik, setBiayaLogistik] = useState('')
 
   const [formSumber, setFormSumber] = useState({
-    cabang: 'Jakarta',
+    cabang: 'Kantor Pusat',
     supplier: '',
     catatan: '',
     lampiranName: '',
@@ -298,52 +298,69 @@ export function BahanBakuCabang() {
     return ['Semua Ikan', ...Array.from(set)]
   }, [data])
 
+  // Available size options matching specific buyer request
+  const availableSizeOptions = useMemo(() => {
+    if (!selectedBahanBaku) return []
+    if (selectedBahanBaku.allowedSizes && selectedBahanBaku.allowedSizes.length > 0) {
+      return selectedBahanBaku.allowedSizes.map((s) => s.size).filter(Boolean)
+    }
+    const k = (selectedBahanBaku.komoditas || '').toLowerCase()
+    if (k.includes('cuttlefish') || k.includes('squid') || k.includes('cumi') || k.includes('sotong')) {
+      return ['300 - 500 g', '500 - 700 g', '700 - 1.000 g', '1.000 g Up']
+    }
+    if (k.includes('cakalang') || k.includes('skipjack')) {
+      return ['Size 1 kg', 'Size 1 - 2 kg', 'Size 2 - 4 kg', 'Size 4 kg Up']
+    }
+    return ['Size 1 - 2 kg', 'Size 2 - 4 kg', 'Size 4 kg Up', 'All Size']
+  }, [selectedBahanBaku])
+
   // Open Add Sumber Modal for a specific row
   const handleOpenAddSumber = (row: BahanBakuRow) => {
     setSelectedBahanBaku(row)
     setShowSuccessAdded(false)
     setFormSumber({
-      cabang: 'Jakarta',
+      cabang: 'Kantor Pusat',
       supplier: '',
       catatan: '',
       lampiranName: '',
     })
+    setBiayaLogistik('')
 
-    // Pre-populate sizes from selected buyer request
-    let initialSizes: Array<{ size: string; qty: string; hargaBB: string; hargaProses: string; hargaLogistik: string }> = []
-    if (row.allowedSizes && row.allowedSizes.length > 0) {
-      initialSizes = row.allowedSizes.map((s) => ({
-        size: s.size,
-        qty: '',
-        hargaBB: '',
-        hargaProses: '',
-        hargaLogistik: '',
-      }))
+    const allowed =
+      row.allowedSizes && row.allowedSizes.length > 0
+        ? row.allowedSizes.map((s) => s.size).filter(Boolean)
+        : []
+
+    if (allowed.length > 0) {
+      setSumberSizeRows(
+        allowed.map((sz) => ({
+          size: sz,
+          qty: '',
+          hargaBB: '',
+          hargaProses: '',
+        }))
+      )
     } else {
       const k = (row.komoditas || '').toLowerCase()
       if (k.includes('cuttlefish') || k.includes('squid') || k.includes('cumi') || k.includes('sotong')) {
-        initialSizes = [
-          { size: '100 - 200 g', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-          { size: '200 - 300 g', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-          { size: '300 - 500 g', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-          { size: '500 g Up', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-        ]
+        setSumberSizeRows([
+          { size: '300 - 500 g', qty: '', hargaBB: '', hargaProses: '' },
+          { size: '500 - 700 g', qty: '', hargaBB: '', hargaProses: '' },
+          { size: '700 - 1.000 g', qty: '', hargaBB: '', hargaProses: '' },
+        ])
       } else if (k.includes('cakalang') || k.includes('skipjack')) {
-        initialSizes = [
-          { size: 'Size 1 kg', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-          { size: 'Size 1 - 2 kg', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-          { size: 'Size 2 - 4 kg', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-          { size: 'Size 4 kg Up', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-        ]
+        setSumberSizeRows([
+          { size: 'Size 1 kg', qty: '', hargaBB: '', hargaProses: '' },
+          { size: 'Size 1 - 2 kg', qty: '', hargaBB: '', hargaProses: '' },
+          { size: 'Size 2 - 4 kg', qty: '', hargaBB: '', hargaProses: '' },
+        ])
       } else {
-        initialSizes = [
-          { size: 'Grade A (1-2 kg)', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-          { size: 'Grade B (2-4 kg)', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-          { size: 'Grade C (4 kg Up)', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
-        ]
+        setSumberSizeRows([
+          { size: 'Size 1 - 2 kg', qty: '', hargaBB: '', hargaProses: '' },
+          { size: 'Size 2 - 4 kg', qty: '', hargaBB: '', hargaProses: '' },
+        ])
       }
     }
-    setSumberSizeRows(initialSizes)
     setIsAddSumberModalOpen(true)
   }
 
@@ -355,9 +372,13 @@ export function BahanBakuCabang() {
   }
 
   const handleAddSumberSizeRow = () => {
+    const unselected =
+      availableSizeOptions.find((opt) => !sumberSizeRows.some((r) => r.size === opt)) ||
+      availableSizeOptions[0] ||
+      ''
     setSumberSizeRows((prev) => [
       ...prev,
-      { size: '', qty: '', hargaBB: '', hargaProses: '', hargaLogistik: '' },
+      { size: unselected, qty: '', hargaBB: '', hargaProses: '' },
     ])
   }
 
@@ -376,13 +397,13 @@ export function BahanBakuCabang() {
     let totalQty = 0
     let totalValue = 0
     let validRowsCount = 0
+    const logistikNum = Number(biayaLogistik) || 0
 
     const computed = sumberSizeRows.map((r) => {
       const q = Number(r.qty) || 0
       const bb = Number(r.hargaBB) || 0
       const hp = Number(r.hargaProses) || 0
-      const hl = Number(r.hargaLogistik) || 0
-      const akhir = bb + hp + hl
+      const akhir = bb + hp + logistikNum
       totalQty += q
       if (akhir > 0) {
         validRowsCount++
@@ -392,7 +413,7 @@ export function BahanBakuCabang() {
         ...r,
         numericBB: bb,
         numericProses: hp,
-        numericLogistik: hl,
+        numericLogistik: logistikNum,
         numericAkhir: akhir,
       }
     })
@@ -405,7 +426,7 @@ export function BahanBakuCabang() {
         : 0
 
     return { totalQty, avgHargaAkhir, computed }
-  }, [sumberSizeRows])
+  }, [sumberSizeRows, biayaLogistik])
 
   // Submit Tambah Sumber
   const handleSubmitSumber = async (e: React.FormEvent) => {
@@ -442,6 +463,9 @@ export function BahanBakuCabang() {
       qty: sumberMetrics.totalQty,
       spesifikasi: `${finalSizes.length} Size terdaftar`,
       sizes: finalSizes,
+      hargaBahanBaku: finalSizes.length > 0 ? finalSizes[0].hargaBB : undefined,
+      hargaProses: finalSizes.length > 0 ? finalSizes[0].hargaProses : undefined,
+      hargaLogistik: Number(biayaLogistik) || undefined,
       harga: sumberMetrics.avgHargaAkhir > 0 ? sumberMetrics.avgHargaAkhir : undefined,
       catatan: formSumber.catatan,
       lampiran: formSumber.lampiranName,
@@ -882,16 +906,16 @@ export function BahanBakuCabang() {
         {/* 3. MODAL FORM TAMBAH SUMBER (TRIGGER DARI TOMBOL +) */}
         {isAddSumberModalOpen && selectedBahanBaku && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in duration-200 my-8">
+            <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in duration-200 my-6 max-h-[92vh] overflow-y-auto">
               {!showSuccessAdded ? (
                 <>
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div>
-                      <h3 className="text-lg font-bold text-slate-800">
-                        Tambah Sumber — <span className="text-blue-600">{selectedBahanBaku.komoditas}</span>
+                      <h3 className="text-base font-bold text-slate-800">
+                        Tambah Sumber Bahan Baku — <span className="text-blue-600">{selectedBahanBaku.komoditas}</span>
                       </h3>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Input penawaran sumber bahan baku untuk memenuhi permintaan {selectedBahanBaku.buyer}
+                        Input penawaran bahan baku untuk memenuhi permintaan {selectedBahanBaku.buyer}
                       </p>
                     </div>
                     <button
@@ -902,262 +926,295 @@ export function BahanBakuCabang() {
                     </button>
                   </div>
 
-                  {/* Header Summary Box */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Buyer</span>
-                      <span className="font-bold text-slate-800 block text-sm mt-0.5">{selectedBahanBaku.buyer}</span>
+                  {/* Header Summary Bar */}
+                  <div className="flex items-center justify-between bg-slate-50/80 p-3 rounded-xl border border-slate-200 text-xs">
+                    <div className="grid grid-cols-3 gap-6 flex-1">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider">Buyer</span>
+                        <span className="font-bold text-slate-800 text-xs mt-0.5 block">{selectedBahanBaku.buyer}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider">Negara / Tujuan</span>
+                        <span className="font-medium text-slate-700 text-xs mt-0.5 block">{selectedBahanBaku.negara || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider">Komoditas</span>
+                        <span className="font-bold text-blue-600 text-xs mt-0.5 block">{selectedBahanBaku.komoditas}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Negara / Tujuan</span>
-                      <span className="font-semibold text-slate-700 block text-sm mt-0.5">{selectedBahanBaku.negara || '—'}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Komoditas</span>
-                      <span className="font-bold text-blue-600 block text-sm mt-0.5">{selectedBahanBaku.komoditas}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Qty Permintaan</span>
-                      <span className="font-bold text-slate-800 block text-sm mt-0.5">
+
+                    <div className="border-l border-slate-200 pl-6 text-right">
+                      <span className="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider">Total Permintaan</span>
+                      <span className="font-extrabold text-slate-800 text-sm mt-0.5 block">
                         {new Intl.NumberFormat('id-ID').format(selectedBahanBaku.qtyPermintaan)} kg
                       </span>
                     </div>
                   </div>
 
                   <form onSubmit={handleSubmitSumber} className="space-y-4 text-xs">
-                    {/* Baris 1: Cabang & Supplier */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1.5">
-                          Cabang / Lokasi <span className="text-rose-500">*</span>
-                        </label>
-                        <select
-                          required
-                          value={formSumber.cabang}
-                          onChange={(e) => setFormSumber({ ...formSumber, cabang: e.target.value })}
-                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer transition-all"
-                        >
-                          {DAFTAR_CABANG.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-                      </div>
+                    {/* 2 COLUMNS LAYOUT LIKE CANVA MOCKUP */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                      
+                      {/* LEFT COLUMN (COL-SPAN-8): CABANG, SUPPLIER, SIZE TABLE, BIAYA LOGISTIK */}
+                      <div className="lg:col-span-8 space-y-3.5">
+                        
+                        {/* Cabang & Supplier Row */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block font-bold text-slate-700 mb-1">
+                              Cabang / Lokasi <span className="text-rose-500">*</span>
+                            </label>
+                            <div className="relative">
+                              <select
+                                required
+                                value={formSumber.cabang}
+                                onChange={(e) => setFormSumber({ ...formSumber, cabang: e.target.value })}
+                                className="w-full appearance-none px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer text-xs pr-8"
+                              >
+                                {DAFTAR_CABANG.map((c) => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                              </select>
+                              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            </div>
+                          </div>
 
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1.5">
-                          Nama Supplier <span className="font-normal text-slate-400">(Opsional)</span>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Contoh: CV Samudra Mandiri / Nelayan Lokal"
-                          value={formSumber.supplier}
-                          onChange={(e) => setFormSumber({ ...formSumber, supplier: e.target.value })}
-                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Baris 2: TABEL KETERSEDIAAN & RINCIAN HARGA PER SIZE */}
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
-                            Ketersediaan & Rincian Harga per Size
-                          </span>
-                          <p className="text-[10px] text-slate-400">
-                            Khusus size yang diminta buyer {selectedBahanBaku.buyer}
-                          </p>
+                          <div>
+                            <label className="block font-bold text-slate-700 mb-1">
+                              Supplier <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Contoh: PT Suri Tani Pemuka"
+                              value={formSumber.supplier}
+                              onChange={(e) => setFormSumber({ ...formSumber, supplier: e.target.value })}
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold text-xs"
+                            />
+                          </div>
                         </div>
-                        <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-full border border-blue-200">
-                          Rumus: BB + Proses + Logistik
-                        </span>
-                      </div>
 
-                      <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
-                        <table className="w-full text-left border-collapse text-xs">
-                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[10px]">
-                            <tr>
-                              <th className="py-2 px-2.5">Size / Ukuran</th>
-                              <th className="py-2 px-2 text-right">Qty (kg) *</th>
-                              <th className="py-2 px-2 text-right">Harga BB (Rp)</th>
-                              <th className="py-2 px-2 text-right">Proses (Rp)</th>
-                              <th className="py-2 px-2 text-right">Logistik (Rp)</th>
-                              <th className="py-2 px-2.5 text-right font-extrabold text-blue-900">Harga Akhir</th>
-                              <th className="py-2 px-1 text-center w-8"></th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {sumberSizeRows.map((row, idx) => {
-                              const bb = Number(row.hargaBB) || 0
-                              const hp = Number(row.hargaProses) || 0
-                              const hl = Number(row.hargaLogistik) || 0
-                              const akhir = bb + hp + hl
+                        {/* Detail Size & Harga Header */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-slate-700">
+                              Detail Size & Harga <span className="font-normal text-slate-400">(mengikuti permintaan buyer)</span>
+                            </span>
+                          </div>
 
-                              return (
-                                <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                                  <td className="py-1.5 px-2.5">
-                                    <input
-                                      type="text"
-                                      placeholder="Size..."
-                                      value={row.size}
-                                      onChange={(e) => handleUpdateSumberSizeRow(idx, 'size', e.target.value)}
-                                      className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold text-xs"
-                                    />
-                                  </td>
-                                  <td className="py-1.5 px-2">
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      placeholder="0"
-                                      value={row.qty}
-                                      onChange={(e) => handleUpdateSumberSizeRow(idx, 'qty', e.target.value)}
-                                      className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 font-bold text-xs text-right text-slate-800"
-                                    />
-                                  </td>
-                                  <td className="py-1.5 px-2">
-                                    <input
-                                      type="number"
-                                      placeholder="Rp"
-                                      value={row.hargaBB}
-                                      onChange={(e) => handleUpdateSumberSizeRow(idx, 'hargaBB', e.target.value)}
-                                      className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs text-right"
-                                    />
-                                  </td>
-                                  <td className="py-1.5 px-2">
-                                    <input
-                                      type="number"
-                                      placeholder="Rp"
-                                      value={row.hargaProses}
-                                      onChange={(e) => handleUpdateSumberSizeRow(idx, 'hargaProses', e.target.value)}
-                                      className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs text-right"
-                                    />
-                                  </td>
-                                  <td className="py-1.5 px-2">
-                                    <input
-                                      type="number"
-                                      placeholder="Rp"
-                                      value={row.hargaLogistik}
-                                      onChange={(e) => handleUpdateSumberSizeRow(idx, 'hargaLogistik', e.target.value)}
-                                      className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs text-right"
-                                    />
-                                  </td>
-                                  <td className="py-1.5 px-2.5 text-right font-extrabold text-blue-700 whitespace-nowrap">
-                                    {akhir > 0 ? `Rp ${new Intl.NumberFormat('id-ID').format(akhir)}` : '—'}
-                                  </td>
-                                  <td className="py-1.5 px-1 text-center">
-                                    {sumberSizeRows.length > 1 && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleRemoveSumberSizeRow(idx)}
-                                        className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
-                                        title="Hapus baris"
-                                      >
-                                        <Trash2 className="w-3 h-3" />
-                                      </button>
-                                    )}
-                                  </td>
+                          {/* Dynamic Size Table */}
+                          <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                            <table className="w-full text-left border-collapse text-xs">
+                              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[10px]">
+                                <tr>
+                                  <th className="py-2 px-2 text-center w-8">No</th>
+                                  <th className="py-2 px-2.5">Size *</th>
+                                  <th className="py-2 px-2 text-right">Qty Tersedia (kg) *</th>
+                                  <th className="py-2 px-2 text-right">Harga BB (IDR/kg) *</th>
+                                  <th className="py-2 px-2 text-right">Harga Proses (IDR/kg)</th>
+                                  <th className="py-2 px-2.5 text-right font-extrabold text-blue-900">Harga Akhir (IDR/kg)</th>
+                                  <th className="py-2 px-1 text-center w-7"></th>
                                 </tr>
-                              )
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {sumberSizeRows.map((row, idx) => {
+                                  const bb = Number(row.hargaBB) || 0
+                                  const hp = Number(row.hargaProses) || 0
+                                  const logistikNum = Number(biayaLogistik) || 0
+                                  const akhir = bb + hp + logistikNum
 
-                      <div className="flex justify-between items-center pt-0.5">
-                        <button
-                          type="button"
-                          onClick={handleAddSumberSizeRow}
-                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>Tambah Size</span>
-                        </button>
+                                  return (
+                                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                                      <td className="py-1.5 px-2 text-center text-slate-400 font-medium text-[11px]">
+                                        {idx + 1}
+                                      </td>
+                                      <td className="py-1.5 px-2">
+                                        <div className="relative">
+                                          <select
+                                            value={row.size}
+                                            onChange={(e) => handleUpdateSumberSizeRow(idx, 'size', e.target.value)}
+                                            className="w-full appearance-none px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 font-semibold text-xs cursor-pointer pr-6"
+                                          >
+                                            {availableSizeOptions.map((opt) => (
+                                              <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                          </select>
+                                          <ChevronDown className="w-3 h-3 text-slate-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                        </div>
+                                      </td>
+                                      <td className="py-1.5 px-2">
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          required
+                                          placeholder="0"
+                                          value={row.qty}
+                                          onChange={(e) => handleUpdateSumberSizeRow(idx, 'qty', e.target.value)}
+                                          className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold text-xs text-right text-slate-800"
+                                        />
+                                      </td>
+                                      <td className="py-1.5 px-2">
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          required
+                                          placeholder="0"
+                                          value={row.hargaBB}
+                                          onChange={(e) => handleUpdateSumberSizeRow(idx, 'hargaBB', e.target.value)}
+                                          className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs text-right"
+                                        />
+                                      </td>
+                                      <td className="py-1.5 px-2">
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          placeholder="0"
+                                          value={row.hargaProses}
+                                          onChange={(e) => handleUpdateSumberSizeRow(idx, 'hargaProses', e.target.value)}
+                                          className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-xs text-right"
+                                        />
+                                      </td>
+                                      <td className="py-1.5 px-2.5 text-right font-extrabold text-slate-800 whitespace-nowrap">
+                                        {akhir > 0 ? new Intl.NumberFormat('id-ID').format(akhir) : '—'}
+                                      </td>
+                                      <td className="py-1.5 px-1 text-center">
+                                        {sumberSizeRows.length > 1 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRemoveSumberSizeRow(idx)}
+                                            className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                                            title="Hapus baris size"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
 
-                        <span className="text-[11px] text-slate-400">
-                          {sumberSizeRows.filter((r) => r.size.trim() !== '').length} size terisi
-                        </span>
-                      </div>
-
-                      {/* SUMMARY METRIC CARDS */}
-                      <div className="grid grid-cols-2 gap-3 pt-1">
-                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            Total Qty Tersedia
-                          </span>
-                          <p className="text-base font-extrabold text-slate-800 mt-0.5">
-                            {new Intl.NumberFormat('id-ID').format(sumberMetrics.totalQty)} kg
-                          </p>
+                          <div className="pt-0.5">
+                            <button
+                              type="button"
+                              onClick={handleAddSumberSizeRow}
+                              className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Tambah Size</span>
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3">
-                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
-                            Rata-rata Harga Akhir
+                        {/* Biaya Logistik (Berlaku untuk semua size) */}
+                        <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-3 space-y-1">
+                          <span className="text-[11px] font-bold text-slate-700 block">
+                            Biaya Logistik <span className="font-normal text-slate-400">(berlaku untuk semua size)</span>
                           </span>
-                          <p className="text-base font-extrabold text-blue-900 mt-0.5">
-                            {sumberMetrics.avgHargaAkhir > 0
-                              ? `Rp ${new Intl.NumberFormat('id-ID').format(sumberMetrics.avgHargaAkhir)}/kg`
-                              : '—'}
-                          </p>
+                          <div className="flex items-center gap-2 pt-1">
+                            <span className="text-xs text-slate-600 font-medium">Harga Logistik (Opsional)</span>
+                            <div className="flex items-center gap-1.5 w-36">
+                              <input
+                                type="number"
+                                min={0}
+                                placeholder="0"
+                                value={biayaLogistik}
+                                onChange={(e) => setBiayaLogistik(e.target.value)}
+                                className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold text-xs text-right"
+                              />
+                              <span className="text-slate-500 font-medium text-xs whitespace-nowrap">/ kg</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 italic ml-2">
+                              Berlaku untuk seluruh size dalam sumber ini.
+                            </span>
+                          </div>
                         </div>
+
                       </div>
+
+                      {/* RIGHT COLUMN (COL-SPAN-4): FILE PERHITUNGAN & CATATAN & ACTIONS */}
+                      <div className="lg:col-span-4 space-y-3.5 flex flex-col justify-between h-full">
+                        
+                        {/* Input File Perhitungan */}
+                        <div className="space-y-1">
+                          <label className="block font-bold text-slate-700">
+                            Input File Perhitungan <span className="font-normal text-slate-400">(Opsional)</span>
+                          </label>
+                          <label className="border border-dashed border-blue-200 hover:border-blue-400 rounded-xl p-4 text-center bg-blue-50/40 hover:bg-blue-50/70 cursor-pointer transition-all flex flex-col items-center justify-center min-h-[120px] group block">
+                            <Upload className="w-6 h-6 text-blue-500 mb-1.5 group-hover:scale-110 transition-transform" />
+                            <p className="text-xs text-blue-700 font-bold">Upload File (Excel/PDF)</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Drag & drop File atau klik untuk memilih</p>
+                            <p className="text-[9px] text-slate-400">Maks. 10 MB</p>
+                            <input
+                              type="file"
+                              accept=".xlsx,.xls,.pdf"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  setFormSumber({ ...formSumber, lampiranName: e.target.files[0].name })
+                                }
+                              }}
+                              className="hidden"
+                            />
+                          </label>
+                          {formSumber.lampiranName && (
+                            <div className="flex items-center justify-between p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
+                              <span className="truncate font-semibold">{formSumber.lampiranName}</span>
+                              <button
+                                type="button"
+                                onClick={() => setFormSumber({ ...formSumber, lampiranName: '' })}
+                                className="text-emerald-700 hover:text-emerald-900 ml-2"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Catatan (Opsional) */}
+                        <div className="space-y-1">
+                          <label className="block font-bold text-slate-700">
+                            Catatan <span className="font-normal text-slate-400">(Opsional)</span>
+                          </label>
+                          <textarea
+                            rows={3}
+                            placeholder="Tambahkan catatan..."
+                            value={formSumber.catatan}
+                            onChange={(e) => setFormSumber({ ...formSumber, catatan: e.target.value })}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 text-xs resize-none h-20 transition-all"
+                          />
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-end gap-2 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsAddSumberModalOpen(false)}
+                            className="px-4 py-2 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer transition-colors"
+                          >
+                            Batal
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-5 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer transition-all hover:shadow-sm"
+                          >
+                            Simpan Sumber
+                          </button>
+                        </div>
+
+                      </div>
+
                     </div>
 
-                    {/* Baris 3: Lampiran & Catatan */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1.5">
-                          Lampiran Perhitungan <span className="font-normal text-slate-400">(Opsional)</span>
-                        </label>
-                        <div className="border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50 hover:bg-slate-100/80 cursor-pointer transition-colors flex flex-col items-center justify-center h-20">
-                          <Upload className="w-4 h-4 text-slate-400 mb-1" />
-                          <p className="text-[11px] text-slate-600 font-semibold">Upload Excel atau PDF</p>
-                          <p className="text-[9px] text-slate-400">Maksimal ukuran file 10 MB</p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1.5">
-                          Catatan <span className="font-normal text-slate-400">(Opsional)</span>
-                        </label>
-                        <textarea
-                          rows={3}
-                          placeholder="Tambahkan catatan atau keterangan pengiriman..."
-                          value={formSumber.catatan}
-                          onChange={(e) => setFormSumber({ ...formSumber, catatan: e.target.value })}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 text-xs h-20 resize-none transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Info Alert Banner */}
-                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-blue-50/90 border border-blue-200 text-blue-900 text-xs font-medium">
+                    {/* Bottom Info Banner */}
+                    <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-blue-50/90 border border-blue-200 text-blue-900 text-[11px] font-medium">
                       <Info className="w-4 h-4 text-blue-600 shrink-0" />
                       <span>
                         Harga proses, harga logistik, dan file perhitungan tidak wajib diisi. Jika dikosongkan, harga akhir hanya menggunakan harga bahan baku.
                       </span>
                     </div>
 
-                    {/* Modal Footer Buttons */}
-                    <div className="flex items-center justify-between pt-3.5 border-t border-slate-100">
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        <span className="text-rose-500 font-bold">*</span> Wajib diisi
-                      </p>
-                      <div className="flex items-center gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => setIsAddSumberModalOpen(false)}
-                          className="px-4 py-2 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer transition-colors"
-                        >
-                          Batal
-                        </button>
-                        <button
-                          type="submit"
-                          className="px-5 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer transition-all hover:shadow-sm"
-                        >
-                          Simpan Sumber
-                        </button>
-                      </div>
-                    </div>
                   </form>
                 </>
               ) : (
