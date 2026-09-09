@@ -202,12 +202,80 @@ const INITIAL_CABANG_PERMINTAAN: PermintaanRow[] = [
 ]
 
 export function PermintaanCabang() {
-  const [data, setData] = useState<PermintaanRow[]>([])
+  const [data, setData] = useState<PermintaanRow[]>(INITIAL_CABANG_PERMINTAAN)
   const [barangList, setBarangList] = useState<any[]>([])
   const [bahanBakuList, setBahanBakuList] = useState<any[]>([])
   const [supplierList, setSupplierList] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [userName, setUserName] = useState('Aisyah (Direksi)')
+
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        setIsLoading(true)
+        const res = await fetch('/api/permintaan')
+        if (res.ok) {
+          const dbData = await res.json()
+          if (Array.isArray(dbData) && dbData.length > 0) {
+            const mapped: PermintaanRow[] = dbData.map((d: any) => {
+              const seedMatch = INITIAL_CABANG_PERMINTAAN.find(
+                (s) => s.buyer.toLowerCase().trim() === (d.buyer || '').toLowerCase().trim()
+              )
+
+              let sizesList = d.sizes && d.sizes.length > 0 ? d.sizes : []
+              if (sizesList.length === 0 && d.items && d.items.length > 0) {
+                const hasSizes = d.items.some((it: any) => it.size && it.size !== '')
+                if (hasSizes) {
+                  sizesList = d.items.map((it: any) => ({
+                    size: it.size || 'All Size',
+                    qty: Number(it.qty) || 0,
+                    harga: Number(it.harga) || 0,
+                    currency: it.currency || d.currency || 'IDR',
+                  }))
+                }
+              }
+              if (sizesList.length === 0 && seedMatch && seedMatch.sizes) {
+                sizesList = seedMatch.sizes
+              }
+
+              const komoditas = d.items?.[0]?.name || d.komoditas || (seedMatch ? seedMatch.komoditas : '-')
+              const spesifikasi = d.items?.[0]?.spesifikasi || d.spesifikasi || (seedMatch ? seedMatch.spesifikasi : '-')
+              const qty = d.totalQty || d.qty || (seedMatch ? seedMatch.qty : 0)
+              const hargaBuyer = d.items?.[0]?.harga || d.hargaBuyer || (seedMatch ? seedMatch.hargaBuyer : 0)
+
+              return {
+                _id: d._id || d.id || `inq-${Math.random()}`,
+                noRequest: d.noRequest || (seedMatch ? seedMatch.noRequest : 'INQ-2026-001'),
+                tanggal: d.tanggal || (seedMatch ? seedMatch.tanggal : '04/09/2026'),
+                buyer: d.buyer || (seedMatch ? seedMatch.buyer : '-'),
+                negara: d.negara || (seedMatch ? seedMatch.negara : 'Indonesia'),
+                tujuan: d.tujuan || (seedMatch ? seedMatch.tujuan : ''),
+                komoditas,
+                spesifikasi,
+                qty,
+                hargaBuyer,
+                hargaMin: d.hargaMin || (seedMatch ? seedMatch.hargaMin : undefined),
+                hargaMax: d.hargaMax || (seedMatch ? seedMatch.hargaMax : undefined),
+                currencyBuyer: d.currency || d.currencyBuyer || (seedMatch ? seedMatch.currencyBuyer : 'IDR'),
+                sizes: sizesList,
+                statusStok: d.statusStok || 'Stock',
+                lastUpdated: d.lastUpdated || '04/09/2026 oleh Nailah (Admin Pusat)',
+                catatan: d.catatan || '',
+                fileQuotation: d.fileQuotation || '',
+              }
+            })
+            setData(mapped)
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching permintaan:', e)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchAllData()
+  }, [])
 
   // Currency / Kurs states
   const [selectedCurrency, setSelectedCurrency] = useState<'IDR' | 'USD' | 'JPY'>('IDR')
@@ -1508,20 +1576,24 @@ export function PermintaanCabang() {
                         <td className="py-3 px-3 font-semibold text-slate-800">
                           {row.komoditas}
                         </td>
-                        <td className="py-3 px-3 text-slate-600 max-w-xs">
-                          <div className="line-clamp-2" title={row.spesifikasi}>{row.spesifikasi || '-'}</div>
+                        <td className="py-3 px-3 text-slate-700 max-w-xs">
+                          <div className="font-medium text-[12px] text-slate-800 leading-snug line-clamp-2" title={row.spesifikasi}>
+                            {row.spesifikasi || '-'}
+                          </div>
                           {row.sizes && row.sizes.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedDetailItem(row)
-                                setIsDetailSizeModalOpen(true)
-                              }}
-                              className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors cursor-pointer shadow-2xs"
-                            >
-                              <span>{row.sizes.length} Size</span>
-                              <ChevronDown className="w-3 h-3" />
-                            </button>
+                            <div className="mt-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedDetailItem(row)
+                                  setIsDetailSizeModalOpen(true)
+                                }}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-300 transition-all cursor-pointer shadow-2xs active:scale-95"
+                              >
+                                <span>{row.sizes.length} Sizes</span>
+                                <ChevronDown className="w-3.5 h-3.5 text-blue-600" />
+                              </button>
+                            </div>
                           )}
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-slate-800 whitespace-nowrap">
