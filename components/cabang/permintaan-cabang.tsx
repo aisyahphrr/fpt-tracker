@@ -1597,25 +1597,26 @@ export function PermintaanCabang() {
                         <td className="py-3 px-3 font-semibold text-slate-800">
                           {row.komoditas}
                         </td>
-                        <td className="py-3 px-3 text-slate-700 max-w-xs">
-                          <div className="font-medium text-[12px] text-slate-800 leading-snug line-clamp-2" title={row.spesifikasi}>
-                            {row.spesifikasi || '-'}
-                          </div>
-                          {row.sizes && row.sizes.length > 0 && (
-                            <div className="mt-1.5">
+                        <td className="py-3 px-3 text-slate-700 max-w-sm">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-[12px] text-slate-800 leading-tight" title={row.spesifikasi}>
+                              {row.spesifikasi || '-'}
+                            </span>
+                            {row.sizes && row.sizes.length > 0 && (
                               <button
                                 type="button"
                                 onClick={() => {
                                   setSelectedDetailItem(row)
                                   setIsDetailSizeModalOpen(true)
                                 }}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-300 transition-all cursor-pointer shadow-2xs active:scale-95"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+                                title="Klik untuk melihat detail per size"
                               >
                                 <span>{row.sizes.length} Sizes</span>
-                                <ChevronDown className="w-3.5 h-3.5 text-blue-600" />
+                                <ChevronDown className="w-3 h-3 text-blue-600" />
                               </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-slate-800 whitespace-nowrap">
                           {new Intl.NumberFormat('id-ID').format(row.qty)} kg
