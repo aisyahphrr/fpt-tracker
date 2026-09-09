@@ -258,10 +258,17 @@ export default function ApprovalPage() {
         ? Math.round((totalDisetujuiQty / activeItem.qtyPermintaan) * 100)
         : 0
 
+    const totalNilaiTerpilih = approvedSources.reduce((sum, s) => {
+      const srcTotal = s.sizes && s.sizes.length > 0
+        ? s.sizes.reduce((acc, sz) => acc + (sz.qty * (sz.hargaAkhir || sz.hargaBB || s.harga)), 0)
+        : s.qty * s.harga
+      return sum + srcTotal
+    }, 0)
+
     const avgHargaTerpilih =
-      approvedSources.length > 0
-        ? Math.round(approvedSources.reduce((sum, s) => sum + s.harga, 0) / approvedSources.length)
-        : 0
+      totalDisetujuiQty > 0
+        ? Math.round(totalNilaiTerpilih / totalDisetujuiQty)
+        : (approvedSources.length > 0 ? Math.round(approvedSources.reduce((sum, s) => sum + s.harga, 0) / approvedSources.length) : 0)
 
     return { totalDisetujuiQty, percentDisetujui, avgHargaTerpilih }
   }, [activeItem])
@@ -282,10 +289,17 @@ export default function ApprovalPage() {
     const percentDitolak =
       activeItem.qtyPermintaan > 0 ? Math.round((totalDitolakQty / activeItem.qtyPermintaan) * 100) : 0
 
+    const totalNilaiTerpilih = approvedSources.reduce((sum, s) => {
+      const srcTotal = s.sizes && s.sizes.length > 0
+        ? s.sizes.reduce((acc, sz) => acc + (sz.qty * (sz.hargaAkhir || sz.hargaBB || s.harga)), 0)
+        : s.qty * s.harga
+      return sum + srcTotal
+    }, 0)
+
     const avgHargaTerpilih =
-      approvedSources.length > 0
-        ? Math.round(approvedSources.reduce((sum, s) => sum + s.harga, 0) / approvedSources.length)
-        : 0
+      totalDisetujuiQty > 0
+        ? Math.round(totalNilaiTerpilih / totalDisetujuiQty)
+        : (approvedSources.length > 0 ? Math.round(approvedSources.reduce((sum, s) => sum + s.harga, 0) / approvedSources.length) : 0)
 
     const hargaBuyerIDR = Math.round(activeItem.hargaBuyerUSD * activeItem.kursIDR)
     const totalNilaiBuyerUSD = Math.round(activeItem.hargaBuyerUSD * activeItem.qtyPermintaan)
@@ -297,12 +311,6 @@ export default function ApprovalPage() {
       hasBothPrices ? ((selisihHarga / hargaBuyerIDR) * 100).toFixed(2) : '0'
 
     const totalDisetujuiCount = approvedSources.length
-    const totalNilaiTerpilih = approvedSources.reduce((sum, s) => {
-      const srcTotal = s.sizes && s.sizes.length > 0
-        ? s.sizes.reduce((acc, sz) => acc + (sz.qty * (sz.hargaAkhir || s.harga)), 0)
-        : s.qty * s.harga
-      return sum + srcTotal
-    }, 0)
 
     return {
       totalQtySemuaSumber,
