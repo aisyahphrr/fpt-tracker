@@ -845,85 +845,73 @@ export function PermintaanCabang() {
         const rawPermintaan = await resP.json()
         if (Array.isArray(rawPermintaan)) {
           if (rawPermintaan.length === 0) {
-            setData([])
+            setData(INITIAL_CABANG_PERMINTAAN)
           } else {
             const flatRows: PermintaanRow[] = []
             rawPermintaan.forEach((p: any) => {
-              if (p.items && p.items.length > 0) {
-                p.items.forEach((it: any, idx: number) => {
-                  // Determine automatic stock availability from Barang, Bahan Baku, or Supplier
-                  const komoditasName = (it.name || p.komoditas || 'Ikan').trim()
-                  const kLower = komoditasName.toLowerCase()
+              const seedMatch = INITIAL_CABANG_PERMINTAAN.find(
+                (s) => s.buyer.toLowerCase().trim() === (p.buyer || '').toLowerCase().trim()
+              )
 
-                  const inBarang = realBarang.some((b) => {
-                    const bNama = (b.nama || '').toLowerCase().trim()
-                    return bNama && (bNama.includes(kLower) || kLower.includes(bNama))
-                  })
-                  const inBahanBaku = realBahanBaku.some((bb) => {
-                    const bbName = (bb.komoditas || bb.barang || '').toLowerCase().trim()
-                    return (bbName && (bbName.includes(kLower) || kLower.includes(bbName))) && (bb.sumber?.length || 0) > 0
-                  })
-                  const inSupplier = realSupplier.some((s) => {
-                    const sKom = (s.komoditas || s.namaKomoditas || '').toLowerCase().trim()
-                    return sKom && (sKom.includes(kLower) || kLower.includes(sKom))
-                  })
-
-                  const autoStatus: 'Stock' | 'Non-Stock' = (inBarang || inBahanBaku || inSupplier) ? 'Stock' : 'Non-Stock'
-
-                  flatRows.push({
-                    _id: `${p._id}-${idx}`,
-                    noRequest: p.noRequest || `INQ-2026-${String(flatRows.length + 1).padStart(3, '0')}`,
-                    tanggal: p.tanggal || '13/08/2026',
-                    buyer: p.buyer || 'Buyer',
-                    negara: p.negara || '-',
-                    tujuan: p.tujuan || p.negara || '-',
-                    komoditas: komoditasName,
-                    spesifikasi: it.spesifikasi || it.size || 'Grade A',
-                    size: it.size || '',
-                    qty: it.qty || p.totalQty || 1000,
-                    hargaBuyer: it.harga || p.hargaBuyer || 0,
-                    statusStok: autoStatus,
-                    lastUpdated: p.lastUpdated || 'Hari ini oleh Staff',
-                    catatan: p.catatan || '',
-                    fileQuotation: p.fileQuotation || '',
-                  })
-                })
-              } else {
-                const komoditasName = (p.komoditas || 'Cakalang').trim()
-                const kLower = komoditasName.toLowerCase()
-
-                const inBarang = realBarang.some((b) => {
-                  const bNama = (b.nama || '').toLowerCase().trim()
-                  return bNama && (bNama.includes(kLower) || kLower.includes(bNama))
-                })
-                const inBahanBaku = realBahanBaku.some((bb) => {
-                  const bbName = (bb.komoditas || bb.barang || '').toLowerCase().trim()
-                  return (bbName && (bbName.includes(kLower) || kLower.includes(bbName))) && (bb.sumber?.length || 0) > 0
-                })
-                const inSupplier = realSupplier.some((s) => {
-                  const sKom = (s.komoditas || s.namaKomoditas || '').toLowerCase().trim()
-                  return sKom && (sKom.includes(kLower) || kLower.includes(sKom))
-                })
-
-                const autoStatus: 'Stock' | 'Non-Stock' = (inBarang || inBahanBaku || inSupplier) ? 'Stock' : 'Non-Stock'
-
-                flatRows.push({
-                  _id: p._id,
-                  noRequest: p.noRequest || `INQ-2026-001`,
-                  tanggal: p.tanggal || '13/08/2026',
-                  buyer: p.buyer || 'Buyer',
-                  negara: p.negara || '-',
-                  tujuan: p.tujuan || p.negara || '-',
-                  komoditas: komoditasName,
-                  spesifikasi: p.spesifikasi || 'Grade A',
-                  qty: p.totalQty || p.qty || 1000,
-                  hargaBuyer: p.hargaBuyer || 0,
-                  statusStok: autoStatus,
-                  lastUpdated: p.lastUpdated || 'Hari ini oleh Staff',
-                  catatan: p.catatan || '',
-                  fileQuotation: p.fileQuotation || '',
-                })
+              let sizesList = p.sizes && p.sizes.length > 0 ? p.sizes : []
+              if (sizesList.length === 0 && p.items && p.items.length > 0) {
+                if (p.items[0]?.sizes && p.items[0].sizes.length > 0) {
+                  sizesList = p.items[0].sizes
+                } else {
+                  const hasSizes = p.items.some((it: any) => it.size && it.size !== '')
+                  if (hasSizes) {
+                    sizesList = p.items.map((it: any) => ({
+                      size: it.size || 'All Size',
+                      qty: Number(it.qty) || 0,
+                      harga: Number(it.harga) || 0,
+                      currency: it.currency || p.currency || 'IDR',
+                    }))
+                  }
+                }
               }
+              if (sizesList.length === 0 && seedMatch && seedMatch.sizes) {
+                sizesList = seedMatch.sizes
+              }
+
+              const komoditasName = (p.items?.[0]?.name || p.komoditas || (seedMatch ? seedMatch.komoditas : 'Ikan')).trim()
+              const kLower = komoditasName.toLowerCase()
+
+              const inBarang = realBarang.some((b) => {
+                const bNama = (b.nama || '').toLowerCase().trim()
+                return bNama && (bNama.includes(kLower) || kLower.includes(bNama))
+              })
+              const inBahanBaku = realBahanBaku.some((bb) => {
+                const bbName = (bb.komoditas || bb.barang || '').toLowerCase().trim()
+                return (bbName && (bbName.includes(kLower) || kLower.includes(bbName))) && (bb.sumber?.length || 0) > 0
+              })
+              const inSupplier = realSupplier.some((s) => {
+                const sKom = (s.komoditas || s.namaKomoditas || '').toLowerCase().trim()
+                return sKom && (sKom.includes(kLower) || kLower.includes(sKom))
+              })
+
+              const autoStatus: 'Stock' | 'Non-Stock' = (inBarang || inBahanBaku || inSupplier) ? 'Stock' : 'Non-Stock'
+              const spesifikasiText = p.items?.[0]?.spesifikasi || p.spesifikasi || (seedMatch ? seedMatch.spesifikasi : 'Whole Clean, FOB')
+
+              flatRows.push({
+                _id: p._id || p.id || `inq-${Math.random()}`,
+                noRequest: p.noRequest || (seedMatch ? seedMatch.noRequest : `INQ-2026-${String(flatRows.length + 1).padStart(3, '0')}`),
+                tanggal: p.tanggal || (seedMatch ? seedMatch.tanggal : '04/09/2026'),
+                buyer: p.buyer || (seedMatch ? seedMatch.buyer : 'Buyer'),
+                negara: p.negara || (seedMatch ? seedMatch.negara : 'Indonesia'),
+                tujuan: p.tujuan || p.negara || (seedMatch ? seedMatch.tujuan : ''),
+                komoditas: komoditasName,
+                spesifikasi: spesifikasiText,
+                qty: p.totalQty || p.qty || (seedMatch ? seedMatch.qty : 25000),
+                hargaBuyer: p.items?.[0]?.harga || p.hargaBuyer || (seedMatch ? seedMatch.hargaBuyer : 0),
+                hargaMin: p.hargaMin || (p.items?.[0]?.hargaMin) || (seedMatch ? seedMatch.hargaMin : undefined),
+                hargaMax: p.hargaMax || (p.items?.[0]?.hargaMax) || (seedMatch ? seedMatch.hargaMax : undefined),
+                currencyBuyer: p.currency || p.currencyBuyer || (seedMatch ? seedMatch.currencyBuyer : 'IDR'),
+                sizes: sizesList,
+                statusStok: p.statusStok || autoStatus,
+                lastUpdated: p.lastUpdated || (seedMatch ? seedMatch.lastUpdated : '04/09/2026 oleh Nailah (Admin Pusat)'),
+                catatan: p.catatan || '',
+                fileQuotation: p.fileQuotation || '',
+              })
             })
             setData(flatRows)
           }
