@@ -85,6 +85,19 @@ const PermintaanSchema = new mongoose.Schema(
       required: true
     },
     items: [RequestItemSchema],
+    sizes: [SizeDetailSchema],
+    hargaMin: {
+      type: Number,
+      default: 0
+    },
+    hargaMax: {
+      type: Number,
+      default: 0
+    },
+    currency: {
+      type: String,
+      default: 'IDR'
+    },
     fileQuotation: {
       type: String,
       default: ''
@@ -95,7 +108,7 @@ const PermintaanSchema = new mongoose.Schema(
     },
     statusStok: {
       type: String,
-      enum: ['Stock', 'Non-Stock'],
+      enum: ['Stock', 'Non-Stock', 'Limited Supply'],
       default: 'Stock'
     },
     lastUpdated: {

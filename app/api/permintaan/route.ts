@@ -234,15 +234,23 @@ export async function POST(req: Request) {
     const count = await Permintaan.countDocuments();
     const noRequest = `INQ-${year}-${(count + 1).toString().padStart(3, '0')}`;
 
-    const sanitizedItems = items.map((item: any) => ({
-      ...item,
-      barangId: (item.barangId && item.barangId !== '') ? item.barangId : undefined,
-      harga: Number(item.harga) || 0,
-      sizes: Array.isArray(item.sizes) ? item.sizes : [],
-      hargaMin: Number(item.hargaMin) || 0,
-      hargaMax: Number(item.hargaMax) || 0,
-      currency: item.currency || 'USD',
-    }));
+    const rootSizes = Array.isArray(body.sizes) && body.sizes.length > 0 ? body.sizes : []
+    const rootHargaMin = Number(body.hargaMin) || 0
+    const rootHargaMax = Number(body.hargaMax) || 0
+    const rootCurrency = body.currency || 'IDR'
+
+    const sanitizedItems = items.map((item: any) => {
+      const itemSizes = Array.isArray(item.sizes) && item.sizes.length > 0 ? item.sizes : rootSizes
+      return {
+        ...item,
+        barangId: (item.barangId && item.barangId !== '') ? item.barangId : undefined,
+        harga: Number(item.harga) || 0,
+        sizes: itemSizes,
+        hargaMin: Number(item.hargaMin) || rootHargaMin,
+        hargaMax: Number(item.hargaMax) || rootHargaMax,
+        currency: item.currency || rootCurrency,
+      }
+    });
 
     const jumlahItem = sanitizedItems.length;
     const totalQty = sanitizedItems.reduce((acc: number, item: any) => acc + (Number(item.qty) || 0), 0);
@@ -258,6 +266,10 @@ export async function POST(req: Request) {
       jumlahItem,
       totalQty,
       items: sanitizedItems,
+      sizes: rootSizes.length > 0 ? rootSizes : (sanitizedItems[0]?.sizes || []),
+      hargaMin: rootHargaMin || (sanitizedItems[0]?.hargaMin || 0),
+      hargaMax: rootHargaMax || (sanitizedItems[0]?.hargaMax || 0),
+      currency: rootCurrency,
       fileQuotation: fileQuotation || '',
       catatan: catatan || '',
       status: 'pending',
@@ -274,7 +286,7 @@ export async function POST(req: Request) {
         komoditas: item.name,
         qtyPermintaan: item.qty || 1,
         hargaBuyer: item.hargaBuyerPerKg || (Number(item.qty) > 0 && Number(item.harga) > 100000 ? Math.round(Number(item.harga) / Number(item.qty)) : Number(item.harga)) || 0,
-        allowedSizes: item.sizes || [],
+        allowedSizes: item.sizes && item.sizes.length > 0 ? item.sizes : rootSizes,
         targetBuyer: item.targetBuyer || (item.currency ? `${item.currency} ${item.harga || ''}` : ''),
         sumber: [], // Baru masuk dari Permintaan Buyer, belum ada sumber bahan baku
         lastUpdated: nowStr,
