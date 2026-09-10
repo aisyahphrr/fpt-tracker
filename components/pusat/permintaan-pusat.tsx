@@ -126,11 +126,23 @@ export function PermintaanPusat() {
     }
   }
 
-  const handleDelete = (id: string) => {
-    const req = requests.find(r => r.id === id)
-    if (req) {
-      setSelectedRequest(req)
-      setIsDeleteModalOpen(true)
+  const handleDelete = async (id: string) => {
+    const req = requests.find(r => r.id === id || r._id === id)
+    if (!req) return
+    if (!confirm(`Apakah Anda yakin ingin menghapus permintaan ${req.noRequest} (${req.buyer})?`)) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/permintaan/${req._id || id}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        setRequests(prev => prev.filter(r => r.id !== id && r._id !== id))
+      }
+      fetchData()
+    } catch (err) {
+      console.error('Error deleting:', err)
     }
   }
 

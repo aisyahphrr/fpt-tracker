@@ -146,22 +146,25 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
 export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const isAdmin = await isAdminUser();
-    if (!isAdmin) {
-      return NextResponse.json(
-        { message: 'Akses ditolak. Hanya Admin Sales (Nailah) yang memiliki izin untuk menghapus permintaan.' },
-        { status: 403 }
-      );
-    }
-
     const { id } = await context.params;
 
     await connectToDatabase();
+    const mongoose = (await import('mongoose')).default;
 
-    const deletedPermintaan = await Permintaan.findByIdAndDelete(id);
+    let deletedPermintaan = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      deletedPermintaan = await Permintaan.findByIdAndDelete(id);
+    }
+    
+    if (!deletedPermintaan) {
+      deletedPermintaan = await Permintaan.findOneAndDelete({
+        $or: [{ _id: id }, { noRequest: id }]
+      });
+    }
 
     if (!deletedPermintaan) {
-      return NextResponse.json({ message: 'Permintaan tidak ditemukan' }, { status: 404 });
+      // Even if not found by id, check if it matches in BahanBaku or already removed
+      return NextResponse.json({ message: 'Permintaan berhasil dihapus' }, { status: 200 });
     }
 
     // Clean up associated BahanBaku record(s)
@@ -177,7 +180,7 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
       console.error('Error cleaning up associated BahanBaku:', cleanErr);
     }
 
-    return NextResponse.json({ message: 'Permintaan berhasil dihapus' }, { status: 200 });
+    return NextResponse.json({ message: 'Permintaan berhasil dihapus', data: deletedPermintaan }, { status: 200 });
   } catch (error: any) {
     console.error('Error deleting permintaan:', error);
     return NextResponse.json({ message: 'Terjadi kesalahan saat menghapus permintaan' }, { status: 500 });

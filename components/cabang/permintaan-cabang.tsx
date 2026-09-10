@@ -58,224 +58,13 @@ export interface PermintaanRow {
   fileQuotation?: string
 }
 
-// Initial flat seed records matching the revision guide
-const INITIAL_CABANG_PERMINTAAN: PermintaanRow[] = [
-  {
-    _id: 'inq-1',
-    noRequest: 'INQ-2026-001',
-    tanggal: '04/09/2026',
-    buyer: 'Ocean Trading Co.Ltd',
-    negara: 'Korea Selatan',
-    tujuan: 'Busan, Korea',
-    komoditas: 'Cuttlefish',
-    spesifikasi: 'Whole Clean, FOB, Packing : 4.5kg or 5.0kg x 2 blocks, Grade A',
-    qty: 25000,
-    hargaBuyer: 3312500000,
-    hargaMin: 125000,
-    hargaMax: 140000,
-    currencyBuyer: 'IDR',
-    sizes: [
-      { size: '100 - 200 g', qty: 5000, harga: 125000, currency: 'IDR' },
-      { size: '200 - 300 g', qty: 8000, harga: 130000, currency: 'IDR' },
-      { size: '300 - 500 g', qty: 7000, harga: 135000, currency: 'IDR' },
-      { size: '500 g Up', qty: 5000, harga: 140000, currency: 'IDR' },
-    ],
-    statusStok: 'Stock',
-    lastUpdated: '04/09/2026 oleh Nailah (Admin Pusat)',
-  },
-  {
-    _id: 'inq-2',
-    noRequest: 'INQ-2026-002',
-    tanggal: '01/09/2026',
-    buyer: 'MMP International Co.Ltd',
-    negara: 'Thailand',
-    tujuan: 'Bangkok, Thailand',
-    komoditas: 'Skipjack Tuna',
-    spesifikasi: 'Grade A, Whole Round, Frozen',
-    qty: 25000,
-    hargaBuyer: 729000000,
-    hargaMin: 27540,
-    hargaMax: 30780,
-    currencyBuyer: 'USD',
-    sizes: [
-      { size: '1 - 2 kg', qty: 10000, harga: 1.70, currency: 'USD' },
-      { size: '2 - 4 kg', qty: 10000, harga: 1.80, currency: 'USD' },
-      { size: '4 kg up', qty: 5000, harga: 1.90, currency: 'USD' },
-    ],
-    statusStok: 'Stock',
-    lastUpdated: '01/09/2026 oleh Nailah (Admin Pusat)',
-  },
-  {
-    _id: 'inq-3',
-    noRequest: 'INQ-2026-003',
-    tanggal: '28/08/2026',
-    buyer: 'Siam Canadian',
-    negara: 'China',
-    tujuan: 'Guangzhou Port, China',
-    komoditas: 'Squid',
-    spesifikasi: 'Tube & Tentacles, Semi-IQF',
-    qty: 10000,
-    hargaBuyer: 340200000,
-    currencyBuyer: 'USD',
-    sizes: [
-      { size: 'U5', qty: 4000, harga: 2.10, currency: 'USD' },
-      { size: 'U7', qty: 6000, harga: 2.10, currency: 'USD' },
-    ],
-    statusStok: 'Stock',
-    lastUpdated: '28/08/2026 oleh Tami (Pusat)',
-  },
-  {
-    _id: 'inq-4',
-    noRequest: 'INQ-2026-004',
-    tanggal: '27/08/2026',
-    buyer: 'Saigon Blue Ocean JSC',
-    negara: 'Vietnam',
-    tujuan: 'Da Nang, Vietnam',
-    komoditas: 'Yellowfin Tuna',
-    spesifikasi: 'Saku AAA, CO Treated',
-    qty: 30000,
-    hargaBuyer: 1433700000,
-    currencyBuyer: 'USD',
-    sizes: [
-      { size: '10 kg up', qty: 15000, harga: 2.80, currency: 'USD' },
-      { size: '20 kg up', qty: 15000, harga: 3.10, currency: 'USD' },
-    ],
-    statusStok: 'Stock',
-    lastUpdated: '27/08/2026 oleh Nailah (Admin Pusat)',
-  },
-  {
-    _id: 'inq-5',
-    noRequest: 'INQ-2026-005',
-    tanggal: '25/08/2026',
-    buyer: 'Hong Ly Seafood',
-    negara: 'Vietnam',
-    tujuan: 'Ho Chi Minh Port, Vietnam',
-    komoditas: 'Squid',
-    spesifikasi: 'Ring & Tentacles, IQF',
-    qty: 20000,
-    hargaBuyer: 729000000,
-    currencyBuyer: 'USD',
-    sizes: [
-      { size: 'Cleaned Size A', qty: 10000, harga: 2.00, currency: 'USD' },
-      { size: 'Cleaned Size B', qty: 10000, harga: 2.50, currency: 'USD' },
-    ],
-    statusStok: 'Stock',
-    lastUpdated: '25/08/2026 oleh Roberto (Pusat)',
-  },
-  {
-    _id: 'inq-6',
-    noRequest: 'INQ-2026-006',
-    tanggal: '20/08/2026',
-    buyer: 'Alief IKE',
-    negara: 'Yunani',
-    tujuan: 'Athens Port, Greece',
-    komoditas: 'Octopus',
-    spesifikasi: '1-2 kg/pc, Frozen Ball',
-    qty: 5000,
-    hargaBuyer: 486000000,
-    currencyBuyer: 'USD',
-    sizes: [
-      { size: '1 - 2 kg', qty: 5000, harga: 6.00, currency: 'USD' },
-    ],
-    statusStok: 'Stock',
-    lastUpdated: '20/08/2026 oleh Nailah (Admin Pusat)',
-  },
-  {
-    _id: 'inq-7',
-    noRequest: 'INQ-2026-007',
-    tanggal: '18/08/2026',
-    buyer: 'Trang Thuy Seafood',
-    negara: 'Vietnam',
-    tujuan: 'Da Nang, Vietnam',
-    komoditas: 'Yellowfin Tuna',
-    spesifikasi: 'Loin IVP, Grade A',
-    qty: 15000,
-    hargaBuyer: 619650000,
-    currencyBuyer: 'USD',
-    sizes: [
-      { size: '2 - 3 kg', qty: 8000, harga: 2.30, currency: 'USD' },
-      { size: '3 - 5 kg', qty: 7000, harga: 2.80, currency: 'USD' },
-    ],
-    statusStok: 'Stock',
-    lastUpdated: '18/08/2026 oleh Tami (Pusat)',
-  },
-]
-
 export function PermintaanCabang() {
-  const [data, setData] = useState<PermintaanRow[]>(INITIAL_CABANG_PERMINTAAN)
+  const [data, setData] = useState<PermintaanRow[]>([])
   const [barangList, setBarangList] = useState<any[]>([])
   const [bahanBakuList, setBahanBakuList] = useState<any[]>([])
   const [supplierList, setSupplierList] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [userName, setUserName] = useState('Aisyah (Direksi)')
-
-  useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        setIsLoading(true)
-        const res = await fetch('/api/permintaan')
-        if (res.ok) {
-          const dbData = await res.json()
-          if (Array.isArray(dbData) && dbData.length > 0) {
-            const mapped: PermintaanRow[] = dbData.map((d: any) => {
-              const seedMatch = INITIAL_CABANG_PERMINTAAN.find(
-                (s) => s.buyer.toLowerCase().trim() === (d.buyer || '').toLowerCase().trim()
-              )
-
-              let sizesList = d.sizes && d.sizes.length > 0 ? d.sizes : []
-              if (sizesList.length === 0 && d.items && d.items.length > 0) {
-                const hasSizes = d.items.some((it: any) => it.size && it.size !== '')
-                if (hasSizes) {
-                  sizesList = d.items.map((it: any) => ({
-                    size: it.size || 'All Size',
-                    qty: Number(it.qty) || 0,
-                    harga: Number(it.harga) || 0,
-                    currency: it.currency || d.currency || 'IDR',
-                  }))
-                }
-              }
-              if (sizesList.length === 0 && seedMatch && seedMatch.sizes) {
-                sizesList = seedMatch.sizes
-              }
-
-              const komoditas = d.items?.[0]?.name || d.komoditas || (seedMatch ? seedMatch.komoditas : '-')
-              const spesifikasi = d.items?.[0]?.spesifikasi || d.spesifikasi || (seedMatch ? seedMatch.spesifikasi : '-')
-              const qty = d.totalQty || d.qty || (seedMatch ? seedMatch.qty : 0)
-              const hargaBuyer = d.items?.[0]?.harga || d.hargaBuyer || (seedMatch ? seedMatch.hargaBuyer : 0)
-
-              return {
-                _id: d._id || d.id || `inq-${Math.random()}`,
-                noRequest: d.noRequest || (seedMatch ? seedMatch.noRequest : 'INQ-2026-001'),
-                tanggal: d.tanggal || (seedMatch ? seedMatch.tanggal : '04/09/2026'),
-                buyer: d.buyer || (seedMatch ? seedMatch.buyer : '-'),
-                negara: d.negara || (seedMatch ? seedMatch.negara : 'Indonesia'),
-                tujuan: d.tujuan || (seedMatch ? seedMatch.tujuan : ''),
-                komoditas,
-                spesifikasi,
-                qty,
-                hargaBuyer,
-                hargaMin: d.hargaMin || (seedMatch ? seedMatch.hargaMin : undefined),
-                hargaMax: d.hargaMax || (seedMatch ? seedMatch.hargaMax : undefined),
-                currencyBuyer: d.currency || d.currencyBuyer || (seedMatch ? seedMatch.currencyBuyer : 'IDR'),
-                sizes: sizesList,
-                statusStok: d.statusStok || 'Stock',
-                lastUpdated: d.lastUpdated || '04/09/2026 oleh Nailah (Admin Pusat)',
-                catatan: d.catatan || '',
-                fileQuotation: d.fileQuotation || '',
-              }
-            })
-            setData(mapped)
-          }
-        }
-      } catch (e) {
-        console.error('Error fetching permintaan:', e)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchAllData()
-  }, [])
 
   // Currency / Kurs states
   const [selectedCurrency, setSelectedCurrency] = useState<'IDR' | 'USD' | 'JPY'>('IDR')
@@ -792,18 +581,20 @@ export function PermintaanCabang() {
       return
     }
 
+    const targetId = row._id
     // Optimistic UI state update
-    setData((prev) => prev.filter((item) => item._id !== row._id))
+    setData((prev) => prev.filter((item) => item._id !== targetId))
 
     // Persist to Backend API
     try {
-      const rawId = row._id.includes('-') && row._id.length > 20 ? row._id.split('-')[0] : row._id
-      if (rawId && !rawId.startsWith('inq-')) {
-        await fetch(`/api/permintaan/${rawId}`, {
-          method: 'DELETE',
-        })
+      const rawId = targetId.includes('-') && targetId.length > 20 ? targetId.split('-')[0] : targetId
+      const res = await fetch(`/api/permintaan/${rawId}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        console.warn('DELETE returned non-ok status')
       }
-      fetchRealData()
+      await fetchRealData()
     } catch (err) {
       console.error('Error deleting Permintaan:', err)
     }
@@ -877,77 +668,66 @@ export function PermintaanCabang() {
       if (resP.ok) {
         const rawPermintaan = await resP.json()
         if (Array.isArray(rawPermintaan)) {
-          if (rawPermintaan.length === 0) {
-            setData(INITIAL_CABANG_PERMINTAAN)
-          } else {
-            const flatRows: PermintaanRow[] = []
-            rawPermintaan.forEach((p: any) => {
-              const seedMatch = INITIAL_CABANG_PERMINTAAN.find(
-                (s) => s.buyer.toLowerCase().trim() === (p.buyer || '').toLowerCase().trim()
-              )
-
-              let sizesList = p.sizes && p.sizes.length > 0 ? p.sizes : []
-              if (sizesList.length === 0 && p.items && p.items.length > 0) {
-                if (p.items[0]?.sizes && p.items[0].sizes.length > 0) {
-                  sizesList = p.items[0].sizes
-                } else {
-                  const hasSizes = p.items.some((it: any) => it.size && it.size !== '')
-                  if (hasSizes) {
-                    sizesList = p.items.map((it: any) => ({
-                      size: it.size || 'All Size',
-                      qty: Number(it.qty) || 0,
-                      harga: Number(it.harga) || 0,
-                      currency: it.currency || p.currency || 'IDR',
-                    }))
-                  }
+          const flatRows: PermintaanRow[] = []
+          rawPermintaan.forEach((p: any) => {
+            let sizesList = p.sizes && p.sizes.length > 0 ? p.sizes : []
+            if (sizesList.length === 0 && p.items && p.items.length > 0) {
+              if (p.items[0]?.sizes && p.items[0].sizes.length > 0) {
+                sizesList = p.items[0].sizes
+              } else {
+                const hasSizes = p.items.some((it: any) => it.size && it.size !== '')
+                if (hasSizes) {
+                  sizesList = p.items.map((it: any) => ({
+                    size: it.size || 'All Size',
+                    qty: Number(it.qty) || 0,
+                    harga: Number(it.harga) || 0,
+                    currency: it.currency || p.currency || 'IDR',
+                  }))
                 }
               }
-              if (sizesList.length === 0 && seedMatch && seedMatch.sizes) {
-                sizesList = seedMatch.sizes
-              }
+            }
 
-              const komoditasName = (p.items?.[0]?.name || p.komoditas || (seedMatch ? seedMatch.komoditas : 'Ikan')).trim()
-              const kLower = komoditasName.toLowerCase()
+            const komoditasName = (p.items?.[0]?.name || p.komoditas || 'Ikan').trim()
+            const kLower = komoditasName.toLowerCase()
 
-              const inBarang = realBarang.some((b) => {
-                const bNama = (b.nama || '').toLowerCase().trim()
-                return bNama && (bNama.includes(kLower) || kLower.includes(bNama))
-              })
-              const inBahanBaku = realBahanBaku.some((bb) => {
-                const bbName = (bb.komoditas || bb.barang || '').toLowerCase().trim()
-                return (bbName && (bbName.includes(kLower) || kLower.includes(bbName))) && (bb.sumber?.length || 0) > 0
-              })
-              const inSupplier = realSupplier.some((s) => {
-                const sKom = (s.komoditas || s.namaKomoditas || '').toLowerCase().trim()
-                return sKom && (sKom.includes(kLower) || kLower.includes(sKom))
-              })
-
-              const autoStatus: 'Stock' | 'Non-Stock' = (inBarang || inBahanBaku || inSupplier) ? 'Stock' : 'Non-Stock'
-              const spesifikasiText = p.items?.[0]?.spesifikasi || p.spesifikasi || (seedMatch ? seedMatch.spesifikasi : 'Whole Clean, FOB')
-
-              flatRows.push({
-                _id: p._id || p.id || `inq-${Math.random()}`,
-                noRequest: p.noRequest || (seedMatch ? seedMatch.noRequest : `INQ-2026-${String(flatRows.length + 1).padStart(3, '0')}`),
-                tanggal: p.tanggal || (seedMatch ? seedMatch.tanggal : '04/09/2026'),
-                buyer: p.buyer || (seedMatch ? seedMatch.buyer : 'Buyer'),
-                negara: p.negara || (seedMatch ? seedMatch.negara : 'Indonesia'),
-                tujuan: p.tujuan || p.negara || (seedMatch ? seedMatch.tujuan : ''),
-                komoditas: komoditasName,
-                spesifikasi: spesifikasiText,
-                qty: p.totalQty || p.qty || (seedMatch ? seedMatch.qty : 25000),
-                hargaBuyer: p.items?.[0]?.harga || p.hargaBuyer || (seedMatch ? seedMatch.hargaBuyer : 0),
-                hargaMin: p.hargaMin || (p.items?.[0]?.hargaMin) || (seedMatch ? seedMatch.hargaMin : undefined),
-                hargaMax: p.hargaMax || (p.items?.[0]?.hargaMax) || (seedMatch ? seedMatch.hargaMax : undefined),
-                currencyBuyer: p.currency || p.currencyBuyer || (seedMatch ? seedMatch.currencyBuyer : 'IDR'),
-                sizes: sizesList,
-                statusStok: p.statusStok || autoStatus,
-                lastUpdated: p.lastUpdated || (seedMatch ? seedMatch.lastUpdated : '04/09/2026 oleh Nailah (Admin Pusat)'),
-                catatan: p.catatan || '',
-                fileQuotation: p.fileQuotation || '',
-              })
+            const inBarang = realBarang.some((b) => {
+              const bNama = (b.nama || '').toLowerCase().trim()
+              return bNama && (bNama.includes(kLower) || kLower.includes(bNama))
             })
-            setData(flatRows)
-          }
+            const inBahanBaku = realBahanBaku.some((bb) => {
+              const bbName = (bb.komoditas || bb.barang || '').toLowerCase().trim()
+              return (bbName && (bbName.includes(kLower) || kLower.includes(bbName))) && (bb.sumber?.length || 0) > 0
+            })
+            const inSupplier = realSupplier.some((s) => {
+              const sKom = (s.komoditas || s.namaKomoditas || '').toLowerCase().trim()
+              return sKom && (sKom.includes(kLower) || kLower.includes(sKom))
+            })
+
+            const autoStatus: 'Stock' | 'Non-Stock' = (inBarang || inBahanBaku || inSupplier) ? 'Stock' : 'Non-Stock'
+            const spesifikasiText = p.items?.[0]?.spesifikasi || p.spesifikasi || '-'
+
+            flatRows.push({
+              _id: p._id ? p._id.toString() : (p.id || `inq-${Math.random()}`),
+              noRequest: p.noRequest || 'INQ-2026-001',
+              tanggal: p.tanggal || '04/09/2026',
+              buyer: p.buyer || '-',
+              negara: p.negara || 'Indonesia',
+              tujuan: p.tujuan || p.negara || '',
+              komoditas: komoditasName,
+              spesifikasi: spesifikasiText,
+              qty: p.totalQty || p.qty || 0,
+              hargaBuyer: p.items?.[0]?.harga || p.hargaBuyer || 0,
+              hargaMin: p.hargaMin || (p.items?.[0]?.hargaMin) || undefined,
+              hargaMax: p.hargaMax || (p.items?.[0]?.hargaMax) || undefined,
+              currencyBuyer: p.currency || p.currencyBuyer || 'IDR',
+              sizes: sizesList,
+              statusStok: p.statusStok || autoStatus,
+              lastUpdated: p.lastUpdated || '04/09/2026 oleh Nailah (Admin Pusat)',
+              catatan: p.catatan || '',
+              fileQuotation: p.fileQuotation || '',
+            })
+          })
+          setData(flatRows)
         }
       }
     } catch (e) {
